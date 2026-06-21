@@ -1,0 +1,103 @@
+name: nutritrack
+description: "AI-powered nutrition + workout tracker. Offline-first, edge-fast, voice-enabled."
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── State management (codegen) ────────────────────────────────
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+  riverpod_generator: ^2.4.3
+
+  # ── Routing ────────────────────────────────────────────────────
+  go_router: ^14.2.7
+
+  # ── Local persistence — Isar (NoSQL, fast indexed queries) ────
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
+  path_provider: ^2.1.4
+  shared_preferences: ^2.3.2
+
+  # ── Networking ────────────────────────────────────────────────
+  dio: ^5.7.0
+  web_socket_channel: ^3.0.1
+
+  # ── AI / ML ───────────────────────────────────────────────────
+  # (No direct SDK — calls go through our AI gateway repo)
+
+  # ── Camera, voice, images ─────────────────────────────────────
+  camera: ^0.11.0+2
+  image_picker: ^1.1.2
+  image: ^4.2.0
+  record: ^5.1.2                  # Voice capture
+  just_audio: ^0.9.40             # Audio playback for TTS / cues
+  permission_handler: ^11.3.1
+
+  # ── Health platforms ──────────────────────────────────────────
+  health: ^10.2.0                 # Apple Health + Google Fit + Health Connect
+
+  # ── UI ────────────────────────────────────────────────────────
+  google_fonts: ^6.2.1
+  flutter_animate: ^4.5.0
+  animations: ^2.0.11
+  fl_chart: ^0.69.0
+  shimmer: ^3.0.0
+  confetti: ^0.7.0
+  flutter_staggered_animations: ^1.1.1
+  lottie: ^3.1.2
+  rive: ^0.13.13
+  flutter_svg: ^2.0.10+1
+  gap: ^3.0.1
+
+  # ── Models ────────────────────────────────────────────────────
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # ── Utilities ─────────────────────────────────────────────────
+  uuid: ^4.5.1
+  intl: ^0.19.0
+  collection: ^1.18.0
+  crypto: ^3.0.5
+  rxdart: ^0.28.0                 # Streams for voice
+
+  # ── Supabase (cloud sync ready) ───────────────────────────────
+  supabase_flutter: ^2.8.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  isar_generator: ^3.1.0+1
+  riverpod_lint: ^2.3.13
+  custom_lint: ^0.6.4
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/animations/
+    - assets/lottie/
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf

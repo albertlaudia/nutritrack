@@ -1,0 +1,45 @@
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
+.idea/
+.vscode/
+coverage/
+*.log
+
+# Generated code
+*.g.dart
+*.freezed.dart
+isar_collections.g.dart
+
+# Android
+android/.gradle/
+android/local.properties
+android/app/release/
+android/app/debug/
+*.jks
+*.keystore
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Runner.xcworkspace/xcuserdata/
+ios/Runner/GeneratedPluginRegistrant.*
+*.dSYM.zip
+*.dSYM
+
+# macOS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+*.env.local
+lib/core/config/secrets.dart

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>NutriTrack</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>nutritrack</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>MinimumOSVersion</key>
+	<string>13.0</string>
+
+	<key>NSCameraUsageDescription</key>
+	<string>NutriTrack uses the camera to recognize meals and scan barcodes.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>NutriTrack imports meal photos from your library.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>NutriTrack may save meal snapshots.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>NutriTrack uses the microphone for voice logging meals.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>NutriTrack transcribes voice to log meals faster.</string>
+
+	<!-- HealthKit — required by `health` package -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>NutriTrack reads active energy and resting heart rate to calibrate your daily targets.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>NutriTrack writes workout sessions back to Apple Health.</string>
+
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleDefault</string>
+</dict>
+</plist>
