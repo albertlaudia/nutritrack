@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_motion.dart';
+import '../features/camera/presentation/screens/camera_screen.dart';
 import '../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../features/insights/presentation/screens/insights_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
@@ -62,28 +63,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/camera',
-        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
-          const _CameraPlaceholder(),
+        pageBuilder: (context, state) => AppMotion.verticalSharedAxisPage(
+          const CameraScreen(),
         ),
       ),
     ],
   );
 });
-
-class _CameraPlaceholder extends StatelessWidget {
-  const _CameraPlaceholder();
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(backgroundColor: Colors.transparent, foregroundColor: Colors.white),
-      body: const Center(
-        child: Text(
-          'Camera screen — capture + AI review flow here',
-          style: TextStyle(color: Colors.white),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-}

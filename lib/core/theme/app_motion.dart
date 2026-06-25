@@ -28,4 +28,26 @@ class AppMotion {
       },
     );
   }
+
+  /// Vertical slide-up transition (Material 3 expressive) for modal-ish routes
+  /// like the camera screen — the user feels they are descending into the
+  /// camera rather than sliding from a side.
+  static PageRouteBuilder<T> verticalSharedAxisPage<T>(Widget page) {
+    return PageRouteBuilder<T>(
+      transitionDuration: slow,
+      reverseTransitionDuration: fast,
+      pageBuilder: (_, __, ___) => page,
+      transitionsBuilder: (_, anim, __, child) {
+        final slide = Tween<Offset>(
+          begin: const Offset(0, 0.06),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: anim, curve: emphasizedDecelerate));
+        final fade = CurvedAnimation(parent: anim, curve: emphasizedDecelerate);
+        return SlideTransition(
+          position: slide,
+          child: FadeTransition(opacity: fade, child: child),
+        );
+      },
+    );
+  }
 }
