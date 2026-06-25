@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../core/ai/ai_gateway.dart';
 import '../../core/config/secrets.dart';
 import '../../core/db/isar_service.dart';
+import '../../features/camera/data/off_client.dart';
 import '../../features/dashboard/data/food_log_repository.dart';
 import '../../features/dashboard/domain/food_log_entry.dart';
 import '../../features/dashboard/domain/macro_nutrients.dart';
@@ -28,6 +29,13 @@ AIGateway aiGateway(AiGatewayRef ref) {
     primaryModel: Secrets.visionModel,
     fallbackModels: Secrets.fallbackModels,
   );
+}
+
+/// Open Food Facts barcode-lookup client. Singleton — uses an in-memory
+/// session cache so repeat scans are instant.
+@Riverpod(keepAlive: true)
+OpenFoodFactsClient openFoodFacts(OpenFoodFactsRef ref) {
+  return OpenFoodFactsClient();
 }
 
 /// Food log repository — depends on isar.

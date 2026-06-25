@@ -63,6 +63,11 @@ class _QuickLogBarState extends ConsumerState<QuickLogBar>
     context.push('/camera');
   }
 
+  Future<void> _onTapBarcode() async {
+    HapticFeedback.lightImpact();
+    context.push('/barcode');
+  }
+
   Future<void> _onHoldStart() async {
     HapticFeedback.mediumImpact();
     _holdCtrl.forward();
@@ -201,6 +206,19 @@ class _QuickLogBarState extends ConsumerState<QuickLogBar>
                         label: 'Snap',
                         onTap: _onTapCamera,
                         gradient: AppColors.brandGradient,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _BarButton(
+                        icon: Icons.qr_code_scanner_rounded,
+                        label: 'Scan',
+                        onTap: _onTapBarcode,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF00C896), Color(0xFF4FC3F7)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),

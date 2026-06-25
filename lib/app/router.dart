@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_motion.dart';
+import '../features/barcode/presentation/screens/barcode_scanner_screen.dart';
 import '../features/camera/presentation/screens/camera_screen.dart';
 import '../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../features/insights/presentation/screens/insights_screen.dart';
@@ -65,6 +66,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/camera',
         pageBuilder: (context, state) => AppMotion.verticalSharedAxisPage(
           const CameraScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/barcode',
+        pageBuilder: (context, state) => AppMotion.verticalSharedAxisPage(
+          const BarcodeScannerScreen(),
         ),
       ),
     ],
