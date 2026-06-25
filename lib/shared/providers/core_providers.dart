@@ -4,6 +4,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../core/ai/ai_gateway.dart';
 import '../../core/config/secrets.dart';
 import '../../core/db/isar_service.dart';
+import '../../core/sync/pocketbase_client.dart';
+import '../../features/camera/data/off_cache.dart';
 import '../../features/camera/data/off_client.dart';
 import '../../features/dashboard/data/food_log_repository.dart';
 import '../../features/dashboard/domain/food_log_entry.dart';
@@ -36,6 +38,28 @@ AIGateway aiGateway(AiGatewayRef ref) {
 @Riverpod(keepAlive: true)
 OpenFoodFactsClient openFoodFacts(OpenFoodFactsRef ref) {
   return OpenFoodFactsClient();
+}
+
+/// PocketBase HTTP client — used for the cross-user barcode cache and
+/// future cloud sync. Token is set after sign-in via [setToken].
+@Riverpod(keepAlive: true)
+PocketBaseClient pocketBase(PocketBaseRef ref) {
+  return PocketBaseClient(
+    baseUrl: Secrets.pocketBaseUrl,
+    // token is null until the user signs in; the barcode cache uses
+    // a server-side sync job for writes, so reads work either way.
+  );
+}
+
+/// Three-tier barcode cache: in-memory → PocketBase → Open Food Facts.
+/// All scan paths should read from this rather than OpenFoodFactsClient
+/// directly. The scanner UI does not change.
+@Riverpod(keepAlive: true)
+CachedOffClient cachedOff(CachedOffRef ref) {
+  return CachedOffClient(
+    off: ref.watch(openFoodFactsProvider),
+    pb: ref.watch(pocketBaseProvider),
+  );
 }
 
 /// Food log repository — depends on isar.

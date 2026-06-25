@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -157,20 +158,18 @@ class _BarcodeResultSheetState extends State<BarcodeResultSheet> {
             ),
             clipBehavior: Clip.antiAlias,
             child: widget.product.imageUrl != null
-                ? Image.network(
-                    widget.product.imageUrl!,
+                ? CachedNetworkImage(
+                    imageUrl: widget.product.imageUrl!,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Center(
+                    memCacheWidth: 200, // downsample — display is 80px @ 2.5x DPR
+                    placeholder: (_, __) => const Center(
+                      child: SizedBox(width: 18, height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2)),
+                    ),
+                    errorWidget: (_, __, ___) => const Center(
                       child: Icon(Icons.image_not_supported_outlined,
                         color: AppColors.textTertiary, size: 28),
                     ),
-                    loadingBuilder: (_, child, progress) {
-                      if (progress == null) return child;
-                      return const Center(
-                        child: SizedBox(width: 18, height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2)),
-                      );
-                    },
                   )
                 : const Center(
                     child: Text('\ud83e\udd57', style: TextStyle(fontSize: 36)),

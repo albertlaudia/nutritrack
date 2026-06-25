@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -155,7 +156,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   }
 
   Future<void> _lookup(String barcode) async {
-    final client = ref.read(openFoodFactsProvider);
+    final client = ref.read(cachedOffProvider);
     try {
       final product = await client.lookup(barcode);
       if (!mounted) return;
@@ -779,10 +780,12 @@ class _ResultView extends StatelessWidget {
         if (product.imageUrl != null)
           Opacity(
             opacity: 0.3,
-            child: Image.network(
-              product.imageUrl!,
+            child: CachedNetworkImage(
+              imageUrl: product.imageUrl!,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(color: Colors.black),
+              memCacheWidth: 600, // large background, but only need ~600px wide
+              placeholder: (_, __) => Container(color: Colors.black),
+              errorWidget: (_, __, ___) => Container(color: Colors.black),
             ),
           ),
         Container(color: Colors.black.withOpacity(0.5)),

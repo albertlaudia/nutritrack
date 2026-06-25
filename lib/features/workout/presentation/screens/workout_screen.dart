@@ -111,10 +111,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                 future: _exercisesFuture,
                 builder: (context, snap) {
                   if (snap.connectionState != ConnectionState.done) {
-                    return const SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(child: CircularProgressIndicator()),
-                    );
+                    return const _WorkoutListSkeleton();
                   }
                   final exercises = snap.data ?? [];
                   if (exercises.isEmpty) {
@@ -398,5 +395,105 @@ class _ExerciseTile extends StatelessWidget {
       case MuscleGroup.cardio: return '🏃';
       case MuscleGroup.fullBody: return '🏋️';
     }
+  }
+}
+/// Skeleton loader for the exercise list. Same shape as a real tile
+/// (icon + 2-line text + trailing action) so the layout doesn't jump when
+/// results arrive.
+class _WorkoutListSkeleton extends StatefulWidget {
+  const _WorkoutListSkeleton();
+  @override
+  State<_WorkoutListSkeleton> createState() => _WorkoutListSkeletonState();
+}
+
+class _WorkoutListSkeletonState extends State<_WorkoutListSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final base = AppColors.surfaceMuted;
+    final high = AppColors.divider;
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+      sliver: SliverList.builder(
+        itemCount: 6,
+        itemBuilder: (_, i) {
+          return AnimatedBuilder(
+            animation: _ctrl,
+            builder: (_, __) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44, height: 44,
+                      decoration: BoxDecoration(
+                        color: Color.lerp(base, high, _ctrl.value),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: Color.lerp(base, high, _ctrl.value),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            width: 180,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: Color.lerp(base, high, _ctrl.value),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 20, height: 20,
+                      decoration: BoxDecoration(
+                        color: Color.lerp(base, high, _ctrl.value),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }

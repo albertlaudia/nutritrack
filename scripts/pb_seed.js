@@ -285,6 +285,49 @@ const COLLECTIONS = [
       deleteRule: '@request.auth.collectionId = "_superusers"',
     },
   },
+  {
+    name: 'nt_barcode_cache',
+    type: 'base',
+    fields: [
+      // The actual barcode (EAN-13, UPC-A, etc). Indexed unique so lookups
+      // are O(1) and we never duplicate cache entries across users.
+      { name: 'barcode', type: 'text', required: true, options: { max: 32 } },
+      // Cached Open Food Facts response, normalized.
+      { name: 'name', type: 'text', required: true, options: { max: 500 } },
+      { name: 'brand', type: 'text', required: false, options: { max: 200 } },
+      { name: 'image_url', type: 'url', required: false, options: {} },
+      { name: 'serving_grams', type: 'number', required: false, options: { min: 0 } },
+      // Per-100g macros stored as denormalized columns so we don't need to
+      // parse JSON on every read. Doubles as the lookup payload for offline.
+      { name: 'protein_100g', type: 'number', required: false, options: { min: 0 } },
+      { name: 'carbs_100g', type: 'number', required: false, options: { min: 0 } },
+      { name: 'fat_100g', type: 'number', required: false, options: { min: 0 } },
+      { name: 'fiber_100g', type: 'number', required: false, options: { min: 0 } },
+      { name: 'sugar_100g', type: 'number', required: false, options: { min: 0 } },
+      { name: 'sodium_100g', type: 'number', required: false, options: { min: 0 } },
+      { name: 'energy_kcal_100g', type: 'number', required: false, options: { min: 0 } },
+      // Metadata
+      { name: 'categories', type: 'json', required: false, options: { maxSize: 2000 } },
+      { name: 'allergens', type: 'json', required: false, options: { maxSize: 2000 } },
+      { name: 'nutriscore', type: 'text', required: false, options: { max: 4 } },
+      // Source + freshness
+      { name: 'source', type: 'text', required: false, options: { max: 50 } },
+      { name: 'fetched_at', type: 'date', required: true, options: {} },
+      { name: 'hit_count', type: 'number', required: false, options: { min: 0 } },
+    ],
+    rules: {
+      // Public read: any logged-in user can read cached barcodes.
+      // We gate listRule on auth so unauthenticated probes can't dump the
+      // whole table; reads by id are allowed for any signed-in user.
+      listRule: '@request.auth.id != ""',
+      viewRule: '@request.auth.id != ""',
+      // Only superuser writes — caches are populated by the OFF sync job,
+      // not by individual users.
+      createRule: '@request.auth.collectionId = "_superusers"',
+      updateRule: '@request.auth.collectionId = "_superusers"',
+      deleteRule: '@request.auth.collectionId = "_superusers"',
+    },
+  },
 ];
 
 // ── Exercise data ──────────────────────────────────────────────
