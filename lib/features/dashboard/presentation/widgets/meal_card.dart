@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_motion.dart';
@@ -15,12 +17,16 @@ class MealTimelineCard extends StatelessWidget {
     required this.entries,
     this.onAdd,
     this.onTapEntry,
+    this.onDeleteEntry,
+    this.onFavoriteEntry,
   });
 
   final MealSlot slot;
   final List<FoodLogEntry> entries;
   final VoidCallback? onAdd;
   final ValueChanged<FoodLogEntry>? onTapEntry;
+  final ValueChanged<String>? onDeleteEntry;
+  final ValueChanged<FoodLogEntry>? onFavoriteEntry;
 
   @override
   Widget build(BuildContext context) {
@@ -85,13 +91,16 @@ class MealTimelineCard extends StatelessWidget {
           ),
           if (entries.isNotEmpty)
             ...entries.asMap().entries.map(
-                  (e) => _EntryRow(
+                  (e) => _SwipeableEntry(
+                    key: ValueKey(e.value.id),
                     entry: e.value,
                     onTap: onTapEntry == null ? null : () => onTapEntry!(e.value),
+                    onDelete: onDeleteEntry == null ? null : () => onDeleteEntry!(e.value.id),
+                    onFavorite: onFavoriteEntry == null ? null : () => onFavoriteEntry!(e.value),
                   ).animate().fadeIn(
                         delay: Duration(milliseconds: 80 * e.key),
                         duration: AppMotion.fast,
-                      ),
+                      ).slideY(begin: 0.05, end: 0, curve: AppMotion.emphasizedDecelerate),
                 ),
         ],
       ),
@@ -203,6 +212,106 @@ class _MealMacroBars extends StatelessWidget {
           Expanded(
             flex: (macros.fat * 9 / total * 1000).round().clamp(1, 10000),
             child: Container(color: AppColors.rose),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Swipe left to delete, swipe right to toggle favorite.
+class _SwipeableEntry extends StatelessWidget {
+  const _SwipeableEntry({
+    super.key,
+    required this.entry,
+    this.onTap,
+    this.onDelete,
+    this.onFavorite,
+  });
+
+  final FoodLogEntry entry;
+  final VoidCallback? onTap;
+  final VoidCallback? onDelete;
+  final VoidCallback? onFavorite;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: ValueKey('entry_${entry.id}'),
+      direction: DismissDirection.horizontal,
+      dismissThresholds: const {
+        DismissDirection.endToStart: 0.45,
+        DismissDirection.startToEnd: 0.45,
+      },
+      movementDuration: AppMotion.normal,
+      resizeDuration: AppMotion.normal,
+      confirmDismiss: (direction) async {
+        HapticFeedback.mediumImpact();
+        if (direction == DismissDirection.endToStart) {
+          // Swipe LEFT = delete
+          await Future<void>.delayed(const Duration(milliseconds: 200));
+          onDelete?.call();
+          return true;
+        } else {
+          // Swipe RIGHT = toggle favorite
+          HapticFeedback.lightImpact();
+          onFavorite?.call();
+          return false; // don't actually dismiss for favorite
+        }
+      },
+      background: _SwipeBg(
+        alignment: Alignment.centerLeft,
+        color: AppColors.success,
+        icon: entry.isFavorite ? Icons.star : Icons.star_border_rounded,
+        label: entry.isFavorite ? 'Unfav' : 'Favorite',
+        paddingStart: 24,
+      ),
+      secondaryBackground: const _SwipeBg(
+        alignment: Alignment.centerRight,
+        color: AppColors.error,
+        icon: Icons.delete_outline_rounded,
+        label: 'Delete',
+        paddingStart: 24,
+      ),
+      child: _EntryRow(entry: entry, onTap: onTap),
+    );
+  }
+}
+
+class _SwipeBg extends StatelessWidget {
+  const _SwipeBg({
+    required this.alignment,
+    required this.color,
+    required this.icon,
+    required this.label,
+    required this.paddingStart,
+  });
+
+  final Alignment alignment;
+  final Color color;
+  final IconData icon;
+  final String label;
+  final double paddingStart;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLeft = alignment == Alignment.centerLeft;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.only(left: isLeft ? paddingStart : 0, right: isLeft ? 0 : paddingStart),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      alignment: alignment,
+      child: Row(
+        mainAxisAlignment: isLeft ? MainAxisAlignment.start : MainAxisAlignment.end,
+        children: [
+          Icon(icon, color: Colors.white, size: 22),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
           ),
         ],
       ),

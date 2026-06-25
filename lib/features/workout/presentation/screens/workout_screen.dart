@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -16,80 +17,140 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   String _query = '';
   MuscleGroup? _muscle;
   Equipment? _equipment;
+  final _searchCtrl = TextEditingController();
+  late Future<List<Exercise>> _exercisesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _exercisesFuture = _loadExercises();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<List<Exercise>> _loadExercises() async {
+    final repo = await ref.read(workoutRepositoryProvider.future);
+    return repo.searchExercises(
+      query: _query.isEmpty ? null : _query,
+      primaryMuscle: _muscle,
+      equipment: _equipment,
+      limit: 50,
+    );
+  }
+
+  void _refresh() {
+    HapticFeedback.selectionClick();
+    setState(() => _exercisesFuture = _loadExercises());
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final asyncRepo = ref.watch(workoutRepositoryProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('WORKOUT', style: theme.textTheme.bodySmall?.copyWith(
-                      letterSpacing: 1.2,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textTertiary,
-                    )),
-                    const SizedBox(height: 4),
-                    Text('Smart Builder', style: theme.textTheme.headlineMedium),
-                  ],
+        child: RefreshIndicator(
+          color: AppColors.brand,
+          onRefresh: () async {
+            _refresh();
+            await Future<void>.delayed(const Duration(milliseconds: 400));
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('WORKOUT', style: theme.textTheme.bodySmall?.copyWith(
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textTertiary,
+                      )),
+                      const SizedBox(height: 4),
+                      Text('Smart Builder', style: theme.textTheme.headlineMedium),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            SliverToBoxAdapter(child: _SearchBar(
-              onChanged: (q) => setState(() => _query = q),
-              value: _query,
-            )),
-            SliverToBoxAdapter(child: _FilterRow(
-              muscle: _muscle,
-              equipment: _equipment,
-              onMuscle: (m) => setState(() => _muscle = m),
-              onEquipment: (e) => setState(() => _equipment = e),
-            )),
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: Text('Exercises', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
-              ),
-            ),
-            FutureBuilder<List<Exercise>>(
-              future: asyncRepo.then((r) => r.searchExercises(
-                query: _query.isEmpty ? null : _query,
-                primaryMuscle: _muscle,
-                equipment: _equipment,
-                limit: 50,
+              SliverToBoxAdapter(child: _SearchBar(
+                controller: _searchCtrl,
+                onChanged: (q) {
+                  setState(() => _query = q);
+                  _refresh();
+                },
               )),
-              builder: (context, snap) {
-                if (snap.connectionState != ConnectionState.done) {
-                  return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
-                }
-                final exercises = snap.data ?? [];
-                if (exercises.isEmpty) {
-                  return const SliverToBoxAdapter(child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: Center(child: Text('No exercises match your filters')),
-                  ));
-                }
-                return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                  sliver: SliverList.separated(
-                    itemCount: exercises.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, i) => _ExerciseTile(exercise: exercises[i]),
-                  ),
-                );
-              },
-            ),
-          ],
+              SliverToBoxAdapter(child: _FilterRow(
+                muscle: _muscle,
+                equipment: _equipment,
+                onMuscle: (m) {
+                  setState(() => _muscle = m);
+                  _refresh();
+                },
+                onEquipment: (e) {
+                  setState(() => _equipment = e);
+                  _refresh();
+                },
+              )),
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  child: Text('Exercises', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+                ),
+              ),
+              FutureBuilder<List<Exercise>>(
+                future: _exercisesFuture,
+                builder: (context, snap) {
+                  if (snap.connectionState != ConnectionState.done) {
+                    return const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  final exercises = snap.data ?? [];
+                  if (exercises.isEmpty) {
+                    return SliverToBoxAdapter(child: Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(Icons.search_off_rounded,
+                              size: 48, color: AppColors.textTertiary),
+                            const SizedBox(height: 12),
+                            Text('No exercises match your filters',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ));
+                  }
+                  return SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                    sliver: SliverList.separated(
+                      itemCount: exercises.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, i) => _ExerciseTile(
+                        key: ValueKey(exercises[i].id),
+                        exercise: exercises[i],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -133,9 +194,9 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
 }
 
 class _SearchBar extends StatelessWidget {
-  const _SearchBar({required this.onChanged, required this.value});
+  const _SearchBar({required this.controller, required this.onChanged});
+  final TextEditingController controller;
   final ValueChanged<String> onChanged;
-  final String value;
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -153,7 +214,8 @@ class _SearchBar extends StatelessWidget {
             Expanded(
               child: TextField(
                 onChanged: onChanged,
-                controller: TextEditingController(text: value),
+                controller: controller,
+                textInputAction: TextInputAction.search,
                 decoration: const InputDecoration(
                   hintText: 'Search exercises…',
                   border: InputBorder.none,
@@ -163,6 +225,14 @@ class _SearchBar extends StatelessWidget {
                 ),
               ),
             ),
+            if (controller.text.isNotEmpty)
+              IconButton(
+                icon: Icon(Icons.close, color: AppColors.textTertiary, size: 18),
+                onPressed: () {
+                  controller.clear();
+                  onChanged('');
+                },
+              ),
           ],
         ),
       ),

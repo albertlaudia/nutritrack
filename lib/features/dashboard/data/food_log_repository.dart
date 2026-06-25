@@ -63,12 +63,28 @@ class FoodLogRepository {
 
   Future<void> delete(String id) async {
     await _isar.writeTxn(() async {
-      await _isar.foodLogEntitys.deleteById(_isar.foodLogEntitys
-              .filter()
-              .idEqualTo(id)
-              .findFirstSync()
-              ?.isarId ??
-          Isar.minId);
+      // Find first by string id, then delete by Isar's internal numeric id.
+      final entity = await _isar.foodLogEntitys
+          .filter()
+          .idEqualTo(id)
+          .findFirst();
+      if (entity != null) {
+        await _isar.foodLogEntitys.delete(entity.isarId);
+      }
+    });
+  }
+
+  /// Toggle favorite state for an entry. No-op if id is unknown.
+  Future<void> markFavorite(String id, bool value) async {
+    await _isar.writeTxn(() async {
+      final entity = await _isar.foodLogEntitys
+          .filter()
+          .idEqualTo(id)
+          .findFirst();
+      if (entity != null) {
+        entity.isFavorite = value;
+        await _isar.foodLogEntitys.put(entity);
+      }
     });
   }
 
