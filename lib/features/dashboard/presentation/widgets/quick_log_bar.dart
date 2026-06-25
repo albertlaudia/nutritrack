@@ -36,6 +36,7 @@ class _QuickLogBarState extends ConsumerState<QuickLogBar>
   String _liveTranscript = '';
   List<FoodLogEntry>? _pendingEntries;
   bool _saving = false;
+  String? _lastError;
 
   @override
   void initState() {
@@ -98,6 +99,10 @@ class _QuickLogBarState extends ConsumerState<QuickLogBar>
         if (progress.items != null) {
           setState(() => _pendingEntries = progress.items);
         }
+        if (progress.error != null) {
+          setState(() => _lastError = progress.error);
+          HapticFeedback.heavyImpact();
+        }
         if (progress.isFinal) {
           await _finalizeRecording();
         }
@@ -123,6 +128,7 @@ class _QuickLogBarState extends ConsumerState<QuickLogBar>
       setState(() {
         _isRecording = false;
         _pendingEntries = null;
+        _liveTranscript = '';
       });
     }
     _holdCtrl.reverse();
@@ -134,15 +140,26 @@ class _QuickLogBarState extends ConsumerState<QuickLogBar>
       return;
     }
     setState(() => _saving = true);
-    await ref.read(todayMealsProvider.notifier).add(_pendingEntries!);
-    HapticFeedback.heavyImpact();
-    if (mounted) {
-      setState(() {
-        _saving = false;
-        _isRecording = false;
-        _pendingEntries = null;
-        _liveTranscript = '';
-      });
+    try {
+      await ref.read(todayMealsProvider.notifier).add(_pendingEntries!);
+      HapticFeedback.heavyImpact();
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _isRecording = false;
+          _pendingEntries = null;
+          _liveTranscript = '';
+          _lastError = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _lastError = 'Could not save: ${e.toString().split('\n').first}';
+        });
+        HapticFeedback.heavyImpact();
+      }
     }
   }
 
@@ -174,6 +191,7 @@ class _QuickLogBarState extends ConsumerState<QuickLogBar>
                   transcript: _liveTranscript,
                   pendingCount: _pendingEntries?.length,
                   saving: _saving,
+                  error: _lastError,
                 ),
                 Row(
                   children: [
@@ -302,11 +320,13 @@ class _RecordingPanel extends StatefulWidget {
     required this.transcript,
     required this.pendingCount,
     required this.saving,
+    this.error,
   });
 
   final String transcript;
   final int? pendingCount;
   final bool saving;
+  final String? error;
 
   @override
   State<_RecordingPanel> createState() => _RecordingPanelState();
@@ -322,8 +342,34 @@ class _RecordingPanelState extends State<_RecordingPanel>
     _pulse = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
+    );
+    // Only animate the pulse while we are actually recording (pendingCount null
+    // and not saving). Without the guard the dot keeps pulsing after a final
+    // result is delivered, which looks broken.
+    _maybeRunPulse();
   }
+
+  void _maybeRunPulse() {
+    if (widget.pendingCount == null && !widget.saving && widget.transcript.isEmpty) {
+      if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
+    } else {
+      if (_pulse.isAnimating) _pulse.stop();
+      _pulse.value = 0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _RecordingPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.transcript != widget.transcript ||
+        oldWidget.pendingCount != widget.pendingCount ||
+        oldWidget.saving != widget.saving ||
+        oldWidget.error != widget.error) {
+      _maybeRunPulse();
+    }
+  }
+
+  @override
 
   @override
   void dispose() {
@@ -333,6 +379,11 @@ class _RecordingPanelState extends State<_RecordingPanel>
 
   @override
   Widget build(BuildContext context) {
+    // "Idle" = panel mounted but no transcript, no items, not saving → we are
+    // still actively listening. Anything else has reached a terminal state.
+    final isListening = widget.transcript.isEmpty &&
+        widget.pendingCount == null &&
+        !widget.saving;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
@@ -362,10 +413,12 @@ class _RecordingPanelState extends State<_RecordingPanel>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.transcript.isEmpty
+                    widget.error ?? (widget.transcript.isEmpty
                         ? widget.saving ? 'Saving…' : 'Listening to you…'
-                        : '"${widget.transcript}"',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                        : '"${widget.transcript}"'),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: widget.error != null ? AppColors.error : null,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),

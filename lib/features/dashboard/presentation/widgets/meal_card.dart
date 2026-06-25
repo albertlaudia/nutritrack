@@ -124,28 +124,10 @@ class _EntryRow extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: Row(
             children: [
-              if (entry.imagePath != null && File(entry.imagePath!).existsSync())
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.file(
-                    File(entry.imagePath!),
-                    width: 40,
-                    height: 40,
-                    fit: BoxFit.cover,
-                  ),
-                )
-              else
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceMuted,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Center(
-                    child: Text('🍽️', style: TextStyle(fontSize: 18)),
-                  ),
-                ),
+              // Async image with placeholder fallback — avoids synchronous I/O on
+              // the UI thread (the previous version called existsSync() inside
+              // build(), which caused jank when scrolling a list of entries).
+              _EntryThumbnail(path: entry.imagePath),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -214,6 +196,52 @@ class _MealMacroBars extends StatelessWidget {
             child: Container(color: AppColors.rose),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Loads an entry thumbnail from disk asynchronously. Falls back to an emoji
+/// placeholder if the path is null, missing, or fails to decode.
+class _EntryThumbnail extends StatelessWidget {
+  const _EntryThumbnail({required this.path});
+  final String? path;
+
+  @override
+  Widget build(BuildContext context) {
+    if (path == null || path!.isEmpty) return const _ThumbnailPlaceholder();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.file(
+        File(path!),
+        width: 40,
+        height: 40,
+        fit: BoxFit.cover,
+        cacheWidth: 80, // downsample — display is 40px, 2x DPR = 80px
+        errorBuilder: (_, __, ___) => const _ThumbnailPlaceholder(),
+        frameBuilder: (context, child, frame, wasSync) {
+          // Avoid showing a blank rectangle while the image decodes.
+          if (wasSync || frame != null) return child;
+          return const _ThumbnailPlaceholder();
+        },
+      ),
+    );
+  }
+}
+
+class _ThumbnailPlaceholder extends StatelessWidget {
+  const _ThumbnailPlaceholder();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Center(
+        child: Text('🍽️', style: TextStyle(fontSize: 18)),
       ),
     );
   }

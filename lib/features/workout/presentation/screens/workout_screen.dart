@@ -225,14 +225,22 @@ class _SearchBar extends StatelessWidget {
                 ),
               ),
             ),
-            if (controller.text.isNotEmpty)
-              IconButton(
-                icon: Icon(Icons.close, color: AppColors.textTertiary, size: 18),
-                onPressed: () {
-                  controller.clear();
-                  onChanged('');
-                },
-              ),
+            // Subscribe to controller so the X button appears/disappears as
+            // the user types. Reading controller.text directly in build() is
+            // a stale-value bug — this rebuilds whenever the text changes.
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: controller,
+              builder: (_, value, __) => value.text.isEmpty
+                  ? const SizedBox.shrink()
+                  : IconButton(
+                      icon: Icon(Icons.close,
+                        color: AppColors.textTertiary, size: 18),
+                      onPressed: () {
+                        controller.clear();
+                        onChanged('');
+                      },
+                    ),
+            ),
           ],
         ),
       ),

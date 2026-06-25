@@ -62,8 +62,15 @@ class DashboardScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: asyncMeals.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          loading: () => const _LoadingState(),
+          error: (e, st) => _ErrorState(
+            message: 'Could not load your meals.',
+            error: e,
+            onRetry: () {
+              ref.invalidate(todayMealsProvider);
+              ref.invalidate(todayMacrosProvider);
+            },
+          ),
           data: (meals) => RefreshIndicator(
             color: AppColors.brand,
             onRefresh: () async {
@@ -430,6 +437,154 @@ class _ProfilePill extends StatelessWidget {
                 ),
           ),
         ],
+      ),
+    );
+  }
+}
+/// Skeleton loader while data is hydrating. Shown instead of a centered spinner
+/// so the screen layout doesn't shift when content arrives.
+class _LoadingState extends StatelessWidget {
+  const _LoadingState();
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 140),
+      children: const [
+        _SkeletonBlock(width: 80, height: 12),
+        SizedBox(height: 8),
+        _SkeletonBlock(width: 200, height: 28),
+        SizedBox(height: 24),
+        _SkeletonBlock(width: double.infinity, height: 280, radius: 140),
+        SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(child: _SkeletonBlock(width: double.infinity, height: 60)),
+            SizedBox(width: 8),
+            Expanded(child: _SkeletonBlock(width: double.infinity, height: 60)),
+            SizedBox(width: 8),
+            Expanded(child: _SkeletonBlock(width: double.infinity, height: 60)),
+          ],
+        ),
+        SizedBox(height: 28),
+        _SkeletonBlock(width: 80, height: 20),
+        SizedBox(height: 12),
+        _SkeletonBlock(width: double.infinity, height: 90),
+        SizedBox(height: 8),
+        _SkeletonBlock(width: double.infinity, height: 90),
+      ],
+    );
+  }
+}
+
+class _SkeletonBlock extends StatefulWidget {
+  const _SkeletonBlock({
+    required this.width,
+    required this.height,
+    this.radius = 14,
+  });
+  final double width;
+  final double height;
+  final double radius;
+
+  @override
+  State<_SkeletonBlock> createState() => _SkeletonBlockState();
+}
+
+class _SkeletonBlockState extends State<_SkeletonBlock>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) => Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: Color.lerp(AppColors.surfaceMuted, AppColors.divider, _ctrl.value),
+          borderRadius: BorderRadius.circular(widget.radius),
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({
+    required this.message,
+    required this.error,
+    required this.onRetry,
+  });
+  final String message;
+  final Object error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                color: AppColors.error,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(message, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              error.toString(),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textTertiary,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Try again'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.brand,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

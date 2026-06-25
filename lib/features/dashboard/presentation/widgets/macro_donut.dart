@@ -87,18 +87,20 @@ class _MacroDonutState extends State<MacroDonut> with TickerProviderStateMixin {
 
           return Transform.scale(
             scale: pulse,
-            child: CustomPaint(
-              painter: _DonutPainter(
-                progress: p,
-                macros: widget.macros,
-                targetMacros: widget.targetMacros,
-                overshoot: overshoot,
-              ),
-              child: Center(
-                child: _CenterReadout(
-                  consumed: widget.consumed,
-                  target: widget.target,
+            child: RepaintBoundary(
+              child: CustomPaint(
+                painter: _DonutPainter(
+                  progress: p,
+                  macros: widget.macros,
+                  targetMacros: widget.targetMacros,
                   overshoot: overshoot,
+                ),
+                child: Center(
+                  child: _CenterReadout(
+                    consumed: widget.consumed,
+                    target: widget.target,
+                    overshoot: overshoot,
+                  ),
                 ),
               ),
             ),
@@ -219,7 +221,11 @@ class _DonutPainter extends CustomPainter {
       old.progress != progress ||
       old.macros.protein != macros.protein ||
       old.macros.carbs != macros.carbs ||
-      old.macros.fat != macros.fat;
+      old.macros.fat != macros.fat ||
+      old.targetMacros.protein != targetMacros.protein ||
+      old.targetMacros.carbs != targetMacros.carbs ||
+      old.targetMacros.fat != targetMacros.fat ||
+      old.overshoot != overshoot;
 }
 
 class _CenterReadout extends StatelessWidget {

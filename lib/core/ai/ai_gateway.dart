@@ -127,7 +127,25 @@ class OpenRouterAIGateway implements AIGateway {
         // Try next model.
       }
     }
-    throw AIException('Vision recognition failed: $lastErr');
+    throw AIException(_friendlyError(lastErr ?? 'Unknown error'));
+  }
+
+  /// Map technical exceptions to messages a non-technical user can act on.
+  static String _friendlyError(Object e) {
+    final s = e.toString();
+    if (s.contains('SocketException') || s.contains('Connection')) {
+      return 'No internet connection — your entries are saved and will sync later.';
+    }
+    if (s.contains('TimeoutException') || s.contains('Timeout')) {
+      return 'Network is slow — try again or use Snap or Search instead.';
+    }
+    if (s.contains('401') || s.contains('403')) {
+      return 'AI service temporarily unavailable. Try again in a moment.';
+    }
+    if (s.contains('429')) {
+      return 'Too many requests — wait a few seconds and try again.';
+    }
+    return 'Something went wrong. Your entry is still saved locally.';
   }
 
   // ── Voice (Whisper streaming) ─────────────────────────────────
@@ -150,14 +168,31 @@ class OpenRouterAIGateway implements AIGateway {
         return;
       }
       yield const VoiceLogProgress(transcript: 'Transcribing…');
-      final transcript = await _transcribe(bytes);
-      if (transcript.isEmpty) {
-        yield const VoiceLogProgress(isFinal: true);
-        return;
+      try {
+        final transcript = await _transcribe(bytes);
+        if (transcript.isEmpty) {
+          yield const VoiceLogProgress(
+            isFinal: true,
+            error: 'No speech detected — try again in a quieter spot.',
+          );
+          return;
+        }
+        yield VoiceLogProgress(transcript: transcript);
+        final entries = await parseTextLog(transcript, forcedSlot: forcedSlot);
+        yield VoiceLogProgress(
+          transcript: transcript,
+          items: entries,
+          isFinal: entries.isNotEmpty,
+          error: entries.isEmpty
+              ? 'Could not parse any food items from that.'
+              : null,
+        );
+      } catch (e) {
+        yield VoiceLogProgress(
+          isFinal: true,
+          error: 'Voice recognition failed: ${_friendlyError(e)}',
+        );
       }
-      yield VoiceLogProgress(transcript: transcript);
-      final entries = await parseTextLog(transcript, forcedSlot: forcedSlot);
-      yield VoiceLogProgress(transcript: transcript, items: entries, isFinal: true);
     }).asBroadcastStream();
   }
 
@@ -194,7 +229,7 @@ class OpenRouterAIGateway implements AIGateway {
         lastErr = e;
       }
     }
-    throw AIException('Text parse failed: $lastErr');
+    throw AIException(_friendlyError(lastErr ?? 'Unknown error'));
   }
 
   // ── Whisper transcription ─────────────────────────────────────

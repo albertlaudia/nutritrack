@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/app.dart';
+import 'core/error/app_error_handler.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: NutriTrackApp()));
+  AppErrorHandler.install();
+  AppErrorHandler.runGuarded(() {
+    runApp(const ProviderScope(child: NutriTrackApp()));
+  });
 }
