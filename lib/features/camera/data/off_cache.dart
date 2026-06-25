@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 
 import '../../../core/sync/pocketbase_client.dart';
-import '../../../shared/providers/core_providers.dart';
 import 'off_client.dart';
 
 /// Three-tier barcode lookup: in-memory → PocketBase cache → Open Food Facts.
@@ -11,6 +10,10 @@ import 'off_client.dart';
 ///   2. PocketBase nt_barcode_cache for offline / cross-user cache
 ///   3. Open Food Facts over the network (and on hit, write back to PB
 ///      via a server-side sync job — not the device)
+///
+/// PB tier is gated by a circuit-breaker: if PB is unreachable (timeout,
+/// DNS error, server down), we skip it for the next 30s instead of paying
+/// the timeout cost on every scan. The OFF tier always works as fallback.
 ///
 /// Once any user anywhere scans a barcode, every future scan anywhere —
 /// even offline — returns the cached product.
@@ -27,36 +30,50 @@ class CachedOffClient {
   // Session-local cache: faster than PB on the second scan within a session.
   final Map<String, OffProduct> _memCache = {};
 
+  // Circuit breaker for the PB tier. When the last PB call failed, we skip
+  // PB until _pbOpenUntil (epoch millis). Stops wasting 8s timeouts when
+  // the server is down. A successful PB call resets it to 0.
+  int _pbOpenUntil = 0;
+  static const _circuitBreakerMs = 30000; // 30s
+
   // Stats for /debug/cache and telemetry.
   int memHits = 0;
   int pbHits = 0;
   int offHits = 0;
+  int pbSkippedByBreaker = 0;
 
   /// Look up a barcode. Returns null if not in any tier (i.e. not in OFF).
   Future<OffProduct?> lookup(String barcode) async {
-    // Tier 1: in-memory (instant).
+    // Tier 1: in-memory (instant, zero IO).
     final memHit = _memCache[barcode];
     if (memHit != null) {
       memHits++;
       return memHit;
     }
 
-    // Tier 2: PocketBase cache. Failures are silent — fall through to OFF.
-    try {
-      final pbRecord = await _pb.getBarcodeCache(barcode);
-      if (pbRecord != null) {
-        final product = _recordToProduct(pbRecord);
-        _memCache[barcode] = product;
-        pbHits++;
-        return product;
+    // Tier 2: PocketBase cache, gated by circuit breaker.
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final pbAvailable = nowMs >= _pbOpenUntil;
+    if (pbAvailable) {
+      try {
+        final pbRecord = await _pb.getBarcodeCache(barcode);
+        // PB worked — reset the breaker.
+        _pbOpenUntil = 0;
+        if (pbRecord != null) {
+          final product = _recordToProduct(pbRecord);
+          _memCache[barcode] = product;
+          pbHits++;
+          return product;
+        }
+      } on DioException {
+        // PB failed — open the breaker so we don't keep paying for timeouts.
+        _pbOpenUntil = nowMs + _circuitBreakerMs;
       }
-    } on DioException {
-      // Network blip — proceed to OFF, the user will see at most a slight
-      // delay. Don't surface this as an error.
+    } else {
+      pbSkippedByBreaker++;
     }
 
-    // Tier 3: Open Food Facts. Client has its own in-memory cache so even
-    // repeat OFF lookups in a session are instant.
+    // Tier 3: Open Food Facts over the network.
     final product = await _off.lookup(barcode);
     if (product != null) {
       _memCache[barcode] = product;
@@ -65,7 +82,7 @@ class CachedOffClient {
     return product;
   }
 
-  /// Clear all in-memory tiers (e.g. on sign-out or "Clear cache" button).
+  /// Clear the in-memory tier only. PB cache is server-side and persists.
   void clearSession() {
     _memCache.clear();
   }
@@ -88,6 +105,8 @@ class CachedOffClient {
         'mem_hits': memHits,
         'pb_hits': pbHits,
         'off_hits': offHits,
+        'pb_skipped_breaker': pbSkippedByBreaker,
+        'pb_available': DateTime.now().millisecondsSinceEpoch >= _pbOpenUntil ? 1 : 0,
         'mem_size': _memCache.length,
       };
 

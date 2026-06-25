@@ -316,13 +316,14 @@ const COLLECTIONS = [
       { name: 'hit_count', type: 'number', required: false, options: { min: 0 } },
     ],
     rules: {
-      // Public read: any logged-in user can read cached barcodes.
-      // We gate listRule on auth so unauthenticated probes can't dump the
-      // whole table; reads by id are allowed for any signed-in user.
-      listRule: '@request.auth.id != ""',
-      viewRule: '@request.auth.id != ""',
+      // Public read: anyone, including unauthenticated scanners, can read.
+      // The data here is the same that Open Food Facts publishes publicly;
+      // there's no privacy concern in allowing unauth reads. Empty string
+      // rules in PocketBase mean "allow everyone" — including anonymous.
+      listRule: '',
+      viewRule: '',
       // Only superuser writes — caches are populated by the OFF sync job,
-      // not by individual users.
+      // not by individual users. The device path NEVER writes here.
       createRule: '@request.auth.collectionId = "_superusers"',
       updateRule: '@request.auth.collectionId = "_superusers"',
       deleteRule: '@request.auth.collectionId = "_superusers"',

@@ -41,13 +41,12 @@ OpenFoodFactsClient openFoodFacts(OpenFoodFactsRef ref) {
 }
 
 /// PocketBase HTTP client — used for the cross-user barcode cache and
-/// future cloud sync. Token is set after sign-in via [setToken].
+/// future cloud sync. No token: the barcode cache is configured for
+/// anonymous read on the server side (public OFF data).
 @Riverpod(keepAlive: true)
 PocketBaseClient pocketBase(PocketBaseRef ref) {
   return PocketBaseClient(
     baseUrl: Secrets.pocketBaseUrl,
-    // token is null until the user signs in; the barcode cache uses
-    // a server-side sync job for writes, so reads work either way.
   );
 }
 

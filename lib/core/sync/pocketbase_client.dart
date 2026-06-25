@@ -1,25 +1,21 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 
 import '../../features/camera/data/off_client.dart';
 
-/// Thin HTTP client for PocketBase REST API. Used by the barcode cache layer
-/// to push/pull OFF lookups. Lazy-auth — no admin credentials on the device;
-/// we use the existing PocketBase auth (PocketBase Flutter SDK handles this,
-/// but for a focused barcode cache we just need a Dio with the right base URL
-/// and the user's bearer token).
+/// Thin HTTP client for PocketBase REST API.
 ///
-/// The Flutter `pocketbase` package would be a heavy dependency for what is
-/// essentially `GET /api/collections/nt_barcode_cache/records?filter=barcode=X`.
-/// Until we add full PocketBase sync we keep this minimal.
+/// The barcode cache (`nt_barcode_cache`) is configured for anonymous read —
+/// no auth required. The device only ever reads from this client; writes
+/// happen exclusively via the server-side `off_to_pb_sync.js` cron job
+/// using admin credentials that never ship in the app.
+///
+/// This is intentionally NOT the official `pocketbase` package — that's a
+/// heavy dependency for what is effectively two HTTP endpoints.
 class PocketBaseClient {
   PocketBaseClient({
     required String baseUrl,
-    String? token,
     Dio? dio,
   })  : _baseUrl = baseUrl,
-        _token = token,
         _dio = dio ??
             Dio(BaseOptions(
               baseUrl: baseUrl,
@@ -28,24 +24,15 @@ class PocketBaseClient {
               headers: {'Content-Type': 'application/json'},
             ));
 
-  String _baseUrl;
-  String? _token;
+  final String _baseUrl;
   final Dio _dio;
 
-  /// Set / update the auth token. Called by the auth provider when the user
-  /// signs in. Pass null on sign-out.
-  void setToken(String? token) {
-    _token = token;
-  }
-
-  Map<String, String> _headers() {
-    final h = <String, String>{};
-    if (_token != null) h['Authorization'] = _token!;
-    return h;
-  }
+  String get baseUrl => _baseUrl;
 
   /// Fetch a barcode cache record by exact barcode match.
-  /// Returns null if not cached (PB returns 404) or on network failure.
+  /// Returns null if not cached (PB returns empty `items`) or on network
+  /// failure. Network failures are swallowed — the OFF lookup will pick up
+  /// the slack, so transient PB outages don't break the scanner.
   Future<Map<String, dynamic>?> getBarcodeCache(String barcode) async {
     try {
       final res = await _dio.get<Map<String, dynamic>>(
@@ -54,7 +41,7 @@ class PocketBaseClient {
           'filter': 'barcode="$barcode"',
           'perPage': 1,
         },
-        options: Options(headers: _headers(), validateStatus: (s) => s != null && s < 500),
+        options: Options(validateStatus: (s) => s != null && s < 500),
       );
       final items = res.data?['items'] as List?;
       if (items == null || items.isEmpty) return null;
@@ -64,8 +51,26 @@ class PocketBaseClient {
     }
   }
 
-  /// Upsert a barcode cache record. Requires superuser auth (only the server
-  /// sync job calls this). The client-facing app uses [getBarcodeCache] only.
+  /// Health check — used by `CachedOffClient` to skip the PB tier when the
+  /// server is unreachable so we don't pay the timeout on every scan.
+  Future<bool> ping() async {
+    try {
+      final res = await _dio.get<Map<String, dynamic>>(
+        '/api/collections/nt_barcode_cache/records',
+        queryParameters: {'perPage': 1},
+        options: Options(
+          receiveTimeout: const Duration(seconds: 3),
+          validateStatus: (s) => s != null && s < 500,
+        ),
+      );
+      return res.statusCode == 200;
+    } on DioException {
+      return false;
+    }
+  }
+
+  /// Server-side upsert. Not called from the device — included for the
+  /// sync cron to share the same request shape as the device's read.
   Future<bool> upsertBarcodeCache({
     required OffProduct product,
     required String source,
