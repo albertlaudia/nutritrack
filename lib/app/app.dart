@@ -12,7 +12,7 @@ class NutriTrackApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isarInit = ref.watch(isarInitProvider);
+    final isarInit = ref.watch(dbInitProvider);
     final router = ref.watch(routerProvider);
 
     SystemChrome.setSystemUIOverlayStyle(

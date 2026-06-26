@@ -17,7 +17,7 @@ def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '
 
 android {
     namespace = "com.nutritrack.app"
-    compileSdk = 34
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -31,7 +31,7 @@ android {
     defaultConfig {
         applicationId = "com.nutritrack.app"
         minSdkVersion = flutter.minSdkVersion                          // Mobile_scanner + health need 23+
-        targetSdk = 34
+        targetSdk = 35
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
         multiDexEnabled = true

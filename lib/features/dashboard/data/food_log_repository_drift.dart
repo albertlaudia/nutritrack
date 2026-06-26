@@ -27,7 +27,7 @@ class FoodLogRepository {
           ..where((t) => t.loggedAt.isBetweenValues(start, end))
           ..orderBy([(t) => OrderingTerm.asc(t.loggedAt)]))
         .watch()
-        .map((rows) => rows.map(_fromData).toList());
+        .map((rows) => rows.map(_fromRow).toList());
   }
 
   Future<List<FoodLogEntry>> getByDate(DateTime date) async {
@@ -37,7 +37,7 @@ class FoodLogRepository {
           ..where((t) => t.loggedAt.isBetweenValues(start, end))
           ..orderBy([(t) => OrderingTerm.asc(t.loggedAt)]))
         .get();
-    return rows.map(_fromData).toList();
+    return rows.map(_fromRow).toList();
   }
 
   Future<void> addAll(List<FoodLogEntry> entries) async {
@@ -61,13 +61,11 @@ class FoodLogRepository {
     await (_db.delete(_db.foodLogEntries)..where((t) => t.id.equals(id))).go();
   }
 
-  /// Toggle favorite state for an entry. No-op if id is unknown.
   Future<void> markFavorite(String id, bool value) async {
     await (_db.update(_db.foodLogEntries)..where((t) => t.id.equals(id)))
         .write(FoodLogEntriesCompanion(isFavorite: Value(value)));
   }
 
-  /// Aggregate macros for a date — sums all entries.
   Future<MacroNutrients> aggregateForDate(DateTime date) async {
     final entries = await getByDate(date);
     return entries.fold<MacroNutrients>(
@@ -76,7 +74,11 @@ class FoodLogRepository {
     );
   }
 
-  // ── Mapping ──────────────────────────────────────────────────
+  // ── Mapping ───────────────────────────────────────────────────────────────
+
+  FoodLogEntry _fromRow(FoodLogEntry Function(FoodLogEntriesData) mapper) {
+    throw UnimplementedError('use _fromData instead');
+  }
 
   FoodLogEntry _fromData(FoodLogEntriesData e) {
     return FoodLogEntry(

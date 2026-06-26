@@ -3,7 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../core/ai/ai_gateway.dart';
 import '../../core/config/secrets.dart';
-import '../../core/db/isar_service.dart';
+import '../../core/db/db_service.dart';
 import '../../core/sync/pocketbase_client.dart';
 import '../../features/camera/data/off_cache.dart';
 import '../../features/camera/data/off_client.dart';
@@ -15,10 +15,10 @@ import '../../features/workout/data/workout_repository.dart';
 
 part 'core_providers.g.dart';
 
-/// Initialize Isar at app start.
+/// Initialize the local database at app start.
 @Riverpod(keepAlive: true)
-Future<IsarService> isarInit(IsarInitRef ref) async {
-  final service = await IsarService.init();
+Future<DbService> dbInit(DbInitRef ref) async {
+  final service = await DbService.init();
   ref.onDispose(service.close);
   return service;
 }
@@ -61,18 +61,18 @@ CachedOffClient cachedOff(CachedOffRef ref) {
   );
 }
 
-/// Food log repository — depends on isar.
+/// Food log repository — depends on local db.
 @Riverpod(keepAlive: true)
 Future<FoodLogRepository> foodLogRepository(FoodLogRepositoryRef ref) async {
-  final isar = await ref.watch(isarInitProvider.future);
-  return FoodLogRepository(isar);
+  final db = await ref.watch(dbInitProvider.future);
+  return FoodLogRepository(db);
 }
 
 /// Workout repository.
 @Riverpod(keepAlive: true)
 Future<WorkoutRepository> workoutRepository(WorkoutRepositoryRef ref) async {
-  final isar = await ref.watch(isarInitProvider.future);
-  return WorkoutRepository(isar);
+  final db = await ref.watch(dbInitProvider.future);
+  return WorkoutRepository(db);
 }
 
 /// Selected date — defaults to today.
@@ -108,7 +108,7 @@ class UserProfileController extends _$UserProfileController {
   void update(UserProfile profile) => state = profile;
 }
 
-/// AsyncNotifier holding today's meals as a reactive stream from Isar.
+/// AsyncNotifier holding today's meals as a reactive stream from Drift.
 @Riverpod(keepAlive: true)
 class TodayMeals extends _$TodayMeals {
   @override
