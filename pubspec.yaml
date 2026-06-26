@@ -86,11 +86,6 @@ dev_dependencies:
   freezed: 2.4.7
   json_serializable: ^6.8.0
   isar_generator: ^3.1.0+1
-  # NOTE: riverpod_lint 2.3.13 + custom_lint 0.6.4 may need a downgrade
-  # to satisfy analyzer <6.0.0 (isar_generator's cap). If pub get fails
-  # on these, try riverpod_lint 0.3.1 + custom_lint 0.5.7 (analyzer 5 line).
-  riverpod_lint: ^2.3.13
-  custom_lint: ^0.6.4
   mocktail: ^1.0.4
 
 flutter:

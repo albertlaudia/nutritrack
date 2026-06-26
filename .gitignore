@@ -43,3 +43,5 @@ Thumbs.db
 .env
 *.env.local
 lib/core/config/secrets.dart
+*.log
+*.lock
