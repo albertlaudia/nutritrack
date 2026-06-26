@@ -1,0 +1,134 @@
+name: OFF → PocketBase sync
+
+# Periodically refreshes the nt_barcode_cache collection by fetching
+# Open Food Facts products for the barcodes listed in
+# data/seed-barcodes.txt and pushing them to PocketBase.
+#
+# Why this exists
+# ===============
+# The NutriTrack mobile app reads barcode data from PocketBase (anonymous,
+# world-readable). Without periodic refresh, only the barcodes that
+# someone has manually scanned get cached, and OFF data goes stale.
+#
+# Schedule
+# ========
+# Every 6 hours: balances freshness against OFF's published "1 req/s
+# for product queries" guideline. With ~200 seed barcodes, the job
+# takes 3-4 minutes; 6h cadence keeps it well under quota.
+#
+# Manual triggers
+# ===============
+# workflow_dispatch lets you re-run with a custom barcode file or a
+# smaller subset for testing.
+
+on:
+  schedule:
+    # 00:00, 06:00, 12:00, 18:00 UTC daily.
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      barcodes_file:
+        description: 'Path to barcode list (one per line). Default: data/seed-barcodes.txt'
+        required: false
+        default: 'data/seed-barcodes.txt'
+      limit:
+        description: 'Max barcodes to process (0 = all). Useful for manual tests.'
+        required: false
+        default: '0'
+
+jobs:
+  sync:
+    name: Sync OFF products to PB cache
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Validate secrets
+        env:
+          PB_URL: ${{ secrets.PB_URL }}
+          PB_ADMIN_EMAIL: ${{ secrets.PB_ADMIN_EMAIL }}
+          PB_ADMIN_PASSWORD: ${{ secrets.PB_ADMIN_PASSWORD }}
+        run: |
+          if [ -z "$PB_URL" ] || [ -z "$PB_ADMIN_EMAIL" ] || [ -z "$PB_ADMIN_PASSWORD" ]; then
+            echo "::error::Missing required secrets: PB_URL, PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD"
+            echo "::error::Configure them at Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+
+      - name: Run sync (dry run)
+        env:
+          PB_URL: ${{ secrets.PB_URL }}
+          PB_ADMIN_EMAIL: ${{ secrets.PB_ADMIN_EMAIL }}
+          PB_ADMIN_PASSWORD: ${{ secrets.PB_ADMIN_PASSWORD }}
+          PB_DRY_RUN: '1'
+        run: |
+          BARCODE_FILE="${{ github.event.inputs.barcodes_file || 'data/seed-barcodes.txt' }}"
+          LIMIT_ARG=""
+          if [ "${{ github.event.inputs.limit }}" != "0" ] && [ -n "${{ github.event.inputs.limit }}" ]; then
+            LIMIT_ARG="--limit=${{ github.event.inputs.limit }}"
+          fi
+          if [ ! -f "$BARCODE_FILE" ]; then
+            echo "::warning::Barcode file '$BARCODE_FILE' not found, exiting (schedule run with no work)."
+            exit 0
+          fi
+          COUNT=$(wc -l < "$BARCODE_FILE")
+          echo "Dry-run: would process $(grep -c '^[0-9]' "$BARCODE_FILE") valid barcodes from $BARCODE_FILE"
+          node scripts/off_to_pb_sync.js --barcodes="$BARCODE_FILE" $LIMIT_ARG || true
+
+      - name: Run sync (real)
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+        env:
+          PB_URL: ${{ secrets.PB_URL }}
+          PB_ADMIN_EMAIL: ${{ secrets.PB_ADMIN_EMAIL }}
+          PB_ADMIN_PASSWORD: ${{ secrets.PB_ADMIN_PASSWORD }}
+        run: |
+          BARCODE_FILE="${{ github.event.inputs.barcodes_file || 'data/seed-barcodes.txt' }}"
+          LIMIT_ARG=""
+          if [ "${{ github.event.inputs.limit }}" != "0" ] && [ -n "${{ github.event.inputs.limit }}" ]; then
+            LIMIT_ARG="--limit=${{ github.event.inputs.limit }}"
+          fi
+          if [ ! -f "$BARCODE_FILE" ]; then
+            echo "::warning::Barcode file '$BARCODE_FILE' not found, exiting."
+            exit 0
+          fi
+          node scripts/off_to_pb_sync.js --barcodes="$BARCODE_FILE" $LIMIT_ARG
+
+      - name: Summarize cache state
+        if: always()
+        env:
+          PB_URL: ${{ secrets.PB_URL }}
+          PB_ADMIN_EMAIL: ${{ secrets.PB_ADMIN_EMAIL }}
+          PB_ADMIN_PASSWORD: ${{ secrets.PB_ADMIN_PASSWORD }}
+        run: |
+          # Use the script's auth path to fetch the total cached barcode count.
+          # Doesn't write anything, just a sanity check on the PB side.
+          TOKEN=$(curl -s -X POST "$PB_URL/api/collections/_superusers/auth-with-password" \
+            -H "Content-Type: application/json" \
+            -d "{\"identity\":\"$PB_ADMIN_EMAIL\",\"password\":\"$PB_ADMIN_PASSWORD\"}" \
+            | grep -oE '"token":"[^"]+"' | sed 's/"token":"//;s/"$//')
+          if [ -n "$TOKEN" ]; then
+            TOTAL=$(curl -s -H "Authorization: $TOKEN" \
+              "$PB_URL/api/collections/nt_barcode_cache/records?perPage=1" \
+              | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('totalItems', '?'))" 2>/dev/null)
+            echo "::notice::nt_barcode_cache now has $TOTAL records"
+          fi
+
+      - name: Upload sync log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: off-to-pb-sync-log
+          path: |
+            sync.log
+            *.log
+          if-no-files-found: ignore
+          retention-days: 14
