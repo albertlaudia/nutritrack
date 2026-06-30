@@ -1,0 +1,115 @@
+{
+  "$schema": "https://schemas.figma.com/plugin/figma-tokens/v1",
+  "version": "0.1.0",
+  "name": "NutriTrack",
+  "description": "Design tokens for NutriTrack. Source of truth for colors, typography, spacing. Sync to lib/core/theme/app_colors.dart and app_theme.dart.",
+  "color": {
+    "brand": {
+      "primary": { "value": "#FF6B35", "type": "color" },
+      "dark":    { "value": "#E85A2C", "type": "color" },
+      "light":   { "value": "#FF8A5C", "type": "color" },
+      "soft":    { "value": "#FFF1EB", "type": "color" }
+    },
+    "accent": {
+      "mint":     { "value": "#00C896", "type": "color" },
+      "amber":    { "value": "#FFB627", "type": "color" },
+      "sky":      { "value": "#4FC3F7", "type": "color" },
+      "lavender": { "value": "#8B7FFF", "type": "color" },
+      "rose":     { "value": "#FF6B9D", "type": "color" }
+    },
+    "semantic": {
+      "success": { "value": "{color.accent.mint}", "type": "color" },
+      "warning": { "value": "{color.accent.amber}", "type": "color" },
+      "error":   { "value": "#E53935",            "type": "color" }
+    },
+    "surface": {
+      "background":      { "value": "#FAFAFA", "type": "color" },
+      "surface":         { "value": "#FFFFFF", "type": "color" },
+      "surface-muted":   { "value": "#F5F5F7", "type": "color" },
+      "divider":         { "value": "#EAEAEA", "type": "color" }
+    },
+    "text": {
+      "primary":   { "value": "#1A1A1A", "type": "color" },
+      "secondary": { "value": "#6B6B6B", "type": "color" },
+      "tertiary":  { "value": "#A0A0A0", "type": "color" }
+    },
+    "gradient": {
+      "brand":  { "value": "linear-gradient(135deg, #FF6B35 0%, #FF8A5C 100%)", "type": "gradient" },
+      "hero":   { "value": "linear-gradient(135deg, #FFB627 0%, #FF6B35 100%)", "type": "gradient" }
+    }
+  },
+  "typography": {
+    "family": {
+      "display": { "value": "Inter",   "type": "fontFamily" },
+      "body":    { "value": "Inter",   "type": "fontFamily" },
+      "mono":    { "value": "JetBrains Mono", "type": "fontFamily" }
+    },
+    "weight": {
+      "regular":   { "value": 400, "type": "fontWeight" },
+      "medium":    { "value": 500, "type": "fontWeight" },
+      "semibold":  { "value": 600, "type": "fontWeight" },
+      "bold":      { "value": 700, "type": "fontWeight" },
+      "extrabold": { "value": 800, "type": "fontWeight" }
+    },
+    "size": {
+      "displayLarge":  { "value": 56, "type": "fontSize" },
+      "displayMedium": { "value": 44, "type": "fontSize" },
+      "displaySmall":  { "value": 34, "type": "fontSize" },
+      "headlineLarge": { "value": 28, "type": "fontSize" },
+      "headlineMedium":{ "value": 22, "type": "fontSize" },
+      "headlineSmall": { "value": 18, "type": "fontSize" },
+      "titleLarge":    { "value": 18, "type": "fontSize" },
+      "titleMedium":   { "value": 16, "type": "fontSize" },
+      "titleSmall":    { "value": 14, "type": "fontSize" },
+      "bodyLarge":     { "value": 16, "type": "fontSize" },
+      "bodyMedium":    { "value": 14, "type": "fontSize" },
+      "bodySmall":     { "value": 12, "type": "fontSize" }
+    }
+  },
+  "spacing": {
+    "0":  { "value": 0,   "type": "spacing" },
+    "1":  { "value": 4,   "type": "spacing" },
+    "2":  { "value": 8,   "type": "spacing" },
+    "3":  { "value": 12,  "type": "spacing" },
+    "4":  { "value": 16,  "type": "spacing" },
+    "5":  { "value": 20,  "type": "spacing" },
+    "6":  { "value": 24,  "type": "spacing" },
+    "7":  { "value": 28,  "type": "spacing" },
+    "8":  { "value": 32,  "type": "spacing" },
+    "10": { "value": 40,  "type": "spacing" },
+    "12": { "value": 48,  "type": "spacing" },
+    "16": { "value": 64,  "type": "spacing" },
+    "20": { "value": 80,  "type": "spacing" },
+    "24": { "value": 96,  "type": "spacing" }
+  },
+  "radius": {
+    "none":  { "value": 0,   "type": "borderRadius" },
+    "sm":    { "value": 6,   "type": "borderRadius" },
+    "md":    { "value": 12,  "type": "borderRadius" },
+    "lg":    { "value": 16,  "type": "borderRadius" },
+    "xl":    { "value": 24,  "type": "borderRadius" },
+    "full":  { "value": 9999,"type": "borderRadius" }
+  },
+  "shadow": {
+    "sm": { "value": "0 1px 2px rgba(0,0,0,0.05)",                            "type": "boxShadow" },
+    "md": { "value": "0 4px 12px rgba(0,0,0,0.08)",                           "type": "boxShadow" },
+    "lg": { "value": "0 12px 24px rgba(0,0,0,0.12)",                          "type": "boxShadow" },
+    "xl": { "value": "0 24px 48px rgba(0,0,0,0.16)",                          "type": "boxShadow" }
+  },
+  "zindex": {
+    "base":     { "value": 0,   "type": "zindex" },
+    "raised":   { "value": 1,   "type": "zindex" },
+    "dropdown": { "value": 100, "type": "zindex" },
+    "sticky":   { "value": 200, "type": "zindex" },
+    "overlay":  { "value": 300, "type": "zindex" },
+    "modal":    { "value": 400, "type": "zindex" },
+    "toast":    { "value": 500, "type": "zindex" }
+  },
+  "changelog": [
+    {
+      "version": "0.1.0",
+      "date": "2026-06-30",
+      "change": "Initial design tokens extracted from lib/core/theme/app_colors.dart and app_theme.dart. Brand: orange (#FF6B35), Inter typeface."
+    }
+  ]
+}

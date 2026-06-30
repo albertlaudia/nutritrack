@@ -45,3 +45,14 @@ Thumbs.db
 lib/core/config/secrets.dart
 *.log
 *.lock
+
+# Media: don't commit OS-generated junk, but DO commit the assets themselves
+media/**/*.DS_Store
+media/**/Thumbs.db
+media/**/.Spotlight-V100
+media/**/.Trashes
+
+# Don't commit Adobe / Figma swap files if any slip in
+media/**/*.psd.bak
+media/**/*~
+media/**/#*#
