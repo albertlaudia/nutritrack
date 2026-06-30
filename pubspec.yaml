@@ -7,6 +7,34 @@ environment:
   sdk: ">=3.4.0 <4.0.0"
   flutter: ">=3.24.0"
 
+# -----------------------------------------------------------------------------
+# dependency_overrides: pin record + its platform interfaces together.
+#
+# record 5.x.x uses record_platform_interface 1.x.x and ships platform
+# implementations (record_android, record_linux, record_windows, etc.)
+# that match. record 7.x.x uses record_platform_interface 2.x.x.
+#
+# When pub's resolution pulls record 7.x but record_linux 0.7.2 (which
+# implements interface 1.x), compilation fails on Windows because
+# record_linux is missing the new startStream/hasPermission signatures.
+#
+# Pinning record to 5.1.2 keeps everything on interface 1.x where the
+# shipped record_linux 0.7.2 works. Bump in lockstep with the package
+# when a coherent 7.x set lands across all platform implementations.
+#
+# See: https://pub.dev/packages/record/changelog
+# -----------------------------------------------------------------------------
+dependency_overrides:
+  # Pin record to a known-good 5.x line so pub cannot pull a mix of
+  # record 7.x (interface 2.x) + record_linux 0.7.2 (interface 1.x),
+  # which fails compilation on Windows with:
+  #   "The non-abstract class 'RecordLinux' is missing implementations
+  #    for these members: ... startStream"
+  # When record + its platform implementations all bump to 7.x together,
+  # this override can be removed.
+  record: 5.1.2
+  record_platform_interface: 1.4.0
+
 dependencies:
   flutter:
     sdk: flutter
@@ -36,7 +64,7 @@ dependencies:
   camera: ^0.11.0+2
   image_picker: ^1.1.2
   image: ^4.2.0
-  record: ^5.1.2                  # Voice capture
+  # record is pinned via dependency_overrides below — see comment there
   just_audio: ^0.9.40             # Audio playback for TTS / cues
   permission_handler: ^11.3.1
   mobile_scanner: ^5.2.3          # Barcode/QR scanning (EAN, UPC, etc.)
