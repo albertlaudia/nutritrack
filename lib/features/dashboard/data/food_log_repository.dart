@@ -5,7 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/db/db_service.dart';
 import '../../../core/db/drift_database.dart';
-import '../domain/food_log_entry.dart';
+import '../domain/food_log_entry.dart' as domain;
 import '../domain/macro_nutrients.dart';
 
 /// Food log repository — offline-first. All reads are reactive (Drift watch).
@@ -19,7 +19,7 @@ class FoodLogRepository {
 
   /// Watch meals for a given date. Emits a new list whenever the underlying
   /// table changes — UI uses Riverpod `StreamProvider`.
-  Stream<List<FoodLogEntry>> watchByDate(DateTime date) {
+  Stream<List<domain.FoodLogEntry>> watchByDate(DateTime date) {
     final start = DateTime(date.year, date.month, date.day);
     final end = start.add(const Duration(days: 1));
 
@@ -30,7 +30,7 @@ class FoodLogRepository {
         .map((rows) => rows.map(_fromData).toList());
   }
 
-  Future<List<FoodLogEntry>> getByDate(DateTime date) async {
+  Future<List<domain.FoodLogEntry>> getByDate(DateTime date) async {
     final start = DateTime(date.year, date.month, date.day);
     final end = start.add(const Duration(days: 1));
     final rows = await (_db.select(_db.foodLogEntries)
@@ -40,7 +40,7 @@ class FoodLogRepository {
     return rows.map(_fromData).toList();
   }
 
-  Future<void> addAll(List<FoodLogEntry> entries) async {
+  Future<void> addAll(List<domain.FoodLogEntry> entries) async {
     await _db.batch((batch) {
       batch.insertAllOnConflictUpdate(
         _db.foodLogEntries,
@@ -49,9 +49,9 @@ class FoodLogRepository {
     });
   }
 
-  Future<void> add(FoodLogEntry entry) => addAll([entry]);
+  Future<void> add(domain.FoodLogEntry entry) => addAll([entry]);
 
-  Future<void> update(FoodLogEntry entry) async {
+  Future<void> update(domain.FoodLogEntry entry) async {
     await (_db.update(_db.foodLogEntries)
           ..where((t) => t.id.equals(entry.id)))
         .write(_toCompanion(entry));
@@ -78,8 +78,8 @@ class FoodLogRepository {
 
   // ── Mapping ──────────────────────────────────────────────────
 
-  FoodLogEntry _fromData(FoodLogEntriesData e) {
-    return FoodLogEntry(
+  domain.FoodLogEntry _fromData(FoodLogEntryRow e) {
+    return domain.FoodLogEntry(
       id: e.id,
       name: e.name,
       grams: e.grams,
@@ -109,7 +109,7 @@ class FoodLogRepository {
     );
   }
 
-  FoodLogEntriesCompanion _toCompanion(FoodLogEntry e) {
+  FoodLogEntriesCompanion _toCompanion(domain.FoodLogEntry e) {
     return FoodLogEntriesCompanion.insert(
       id: e.id,
       name: e.name,

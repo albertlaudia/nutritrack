@@ -6,7 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/db/db_service.dart';
 import '../../../core/db/drift_database.dart';
-import '../domain/workout_models.dart';
+import '../domain/workout_models.dart' as domain;
 
 /// Workout repository — sessions, exercise DB search.
 class WorkoutRepository {
@@ -17,14 +17,14 @@ class WorkoutRepository {
   AppDatabase get _db => _service.db;
 
   // ── Sessions ──────────────────────────────────────────────────
-  Stream<List<WorkoutSession>> watchAllSessions() {
+  Stream<List<domain.WorkoutSession>> watchAllSessions() {
     return (_db.select(_db.workoutSessions)
           ..orderBy([(t) => OrderingTerm.desc(t.startedAt)]))
         .watch()
         .map((rows) => rows.map(_fromSessionRow).toList());
   }
 
-  Future<List<WorkoutSession>> recentSessions({int limit = 20}) async {
+  Future<List<domain.WorkoutSession>> recentSessions({int limit = 20}) async {
     final rows = await (_db.select(_db.workoutSessions)
           ..orderBy([(t) => OrderingTerm.desc(t.startedAt)])
           ..limit(limit))
@@ -42,7 +42,7 @@ class WorkoutRepository {
         );
   }
 
-  Future<void> endSession(String id, List<WorkoutExercise> exercises, {int rpe = 0, double caloriesBurned = 0}) async {
+  Future<void> endSession(String id, List<domain.WorkoutExercise> exercises, {int rpe = 0, double caloriesBurned = 0}) async {
     await (_db.update(_db.workoutSessions)..where((t) => t.id.equals(id)))
         .write(WorkoutSessionsCompanion(
       endedAt: Value(DateTime.now()),
@@ -53,11 +53,11 @@ class WorkoutRepository {
   }
 
   // ── Exercise DB search ────────────────────────────────────────
-  Future<List<Exercise>> searchExercises({
+  Future<List<domain.Exercise>> searchExercises({
     String? query,
-    MuscleGroup? primaryMuscle,
-    Equipment? equipment,
-    Difficulty? difficulty,
+    domain.MuscleGroup? primaryMuscle,
+    domain.Equipment? equipment,
+    domain.Difficulty? difficulty,
     int limit = 50,
   }) async {
     final stmt = _db.select(_db.exerciseEntries);
@@ -79,10 +79,10 @@ class WorkoutRepository {
     });
     stmt.limit(limit);
     final rows = await stmt.get();
-    return rows.map(_fromExerciseRow).toList();
+    return rows.map(_fromExerciseRow).cast<domain.Exercise>().toList();
   }
 
-  Future<void> seedExercisesIfEmpty(List<Exercise> seed) async {
+  Future<void> seedExercisesIfEmpty(List<domain.Exercise> seed) async {
     final count = await _db.exerciseEntries.count().getSingle();
     if (count > 0) return;
     await _db.batch((batch) {
@@ -94,13 +94,13 @@ class WorkoutRepository {
   }
 
   // ── Mappers ───────────────────────────────────────────────────
-  WorkoutSession _fromSessionRow(WorkoutSessionsData e) {
-    List<WorkoutExercise> exercises = [];
+  domain.WorkoutSession _fromSessionRow(WorkoutSessionRow e) {
+    List<domain.WorkoutExercise> exercises = [];
     try {
       final list = (jsonDecode(e.exercisesJson) as List).cast<Map<String, dynamic>>();
-      exercises = list.map(WorkoutExercise.fromJson).toList();
+      exercises = list.map(domain.WorkoutExercise.fromJson).toList();
     } catch (_) {}
-    return WorkoutSession(
+    return domain.WorkoutSession(
       id: e.id,
       startedAt: e.startedAt,
       endedAt: e.endedAt,
@@ -111,30 +111,30 @@ class WorkoutRepository {
     );
   }
 
-  Exercise _fromExerciseRow(ExerciseEntriesData e) {
+  domain.Exercise _fromExerciseRow(ExerciseEntryRow e) {
     final secondaryMuscles = (jsonDecode(e.secondaryMusclesJson) as List)
         .cast<String>()
-        .map((s) => MuscleGroup.values.firstWhere(
+        .map((s) => domain.MuscleGroup.values.firstWhere(
               (m) => m.name == s,
-              orElse: () => MuscleGroup.fullBody,
+              orElse: () => domain.MuscleGroup.fullBody,
             ))
         .toList();
     final tags = (jsonDecode(e.tagsJson) as List).cast<String>();
-    return Exercise(
+    return domain.Exercise(
       id: e.id,
       name: e.name,
-      primaryMuscle: MuscleGroup.values.firstWhere(
+      primaryMuscle: domain.MuscleGroup.values.firstWhere(
         (m) => m.name == e.primaryMuscle,
-        orElse: () => MuscleGroup.fullBody,
+        orElse: () => domain.MuscleGroup.fullBody,
       ),
       secondaryMuscles: secondaryMuscles,
-      equipment: Equipment.values.firstWhere(
+      equipment: domain.Equipment.values.firstWhere(
         (eq) => eq.name == e.equipment,
-        orElse: () => Equipment.other,
+        orElse: () => domain.Equipment.other,
       ),
-      difficulty: Difficulty.values.firstWhere(
+      difficulty: domain.Difficulty.values.firstWhere(
         (d) => d.name == e.difficulty,
-        orElse: () => Difficulty.beginner,
+        orElse: () => domain.Difficulty.beginner,
       ),
       instructions: e.instructions,
       videoUrl: e.videoUrl,
@@ -144,7 +144,7 @@ class WorkoutRepository {
     );
   }
 
-  ExerciseEntriesCompanion _toExerciseCompanion(Exercise e) {
+  ExerciseEntriesCompanion _toExerciseCompanion(domain.Exercise e) {
     return ExerciseEntriesCompanion.insert(
       id: e.id,
       name: e.name,

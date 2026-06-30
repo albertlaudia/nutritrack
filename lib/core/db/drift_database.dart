@@ -5,6 +5,7 @@ part 'drift_database.g.dart';
 
 // ─── Tables ──────────────────────────────────────────────────────────────────
 
+@DataClassName('FoodLogEntryRow')
 class FoodLogEntries extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
@@ -32,6 +33,7 @@ class FoodLogEntries extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('ExerciseEntryRow')
 class ExerciseEntries extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
@@ -49,6 +51,7 @@ class ExerciseEntries extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('WorkoutSessionRow')
 class WorkoutSessions extends Table {
   TextColumn get id => text()();
   DateTimeColumn get startedAt => dateTime()();
@@ -57,13 +60,14 @@ class WorkoutSessions extends Table {
   IntColumn get perceivedExertion => integer().withDefault(const Constant(0))();
   RealColumn get caloriesBurned => real().withDefault(const Constant(0))();
   TextColumn get exercisesJson => text().withDefault(const Constant('[]'))();
-  TextColumn get notesText => text().nullable()();
+  TextColumn get notes => text().nullable()();
   BoolColumn get syncedToCloud => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('WeightEntryRow')
 class WeightEntries extends Table {
   TextColumn get id => text()();
   DateTimeColumn get recordedAt => dateTime()();
@@ -77,6 +81,7 @@ class WeightEntries extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('UserProfileRow')
 class UserProfiles extends Table {
   TextColumn get id => text()();
   TextColumn get sex => text()();
@@ -93,6 +98,7 @@ class UserProfiles extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('ImageHashCacheRow')
 class ImageHashCache extends Table {
   TextColumn get hash => text()();
   TextColumn get itemsJson => text()();
@@ -103,6 +109,7 @@ class ImageHashCache extends Table {
   Set<Column> get primaryKey => {hash};
 }
 
+@DataClassName('PendingSyncEntryRow')
 class PendingSyncEntries extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get entityType => text()();

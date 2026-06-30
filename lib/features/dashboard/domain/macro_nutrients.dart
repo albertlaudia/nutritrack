@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'macro_nutrients.freezed.dart';
+part 'macro_nutrients.g.dart';
 
 /// Macronutrient breakdown. kcal automatically derived: P×4 + C×4 + F×9.
 @freezed
@@ -15,6 +16,9 @@ class MacroNutrients with _$MacroNutrients {
     @Default(0.0) double sugar,
     @Default(0.0) double sodium,
   }) = _MacroNutrients;
+
+  factory MacroNutrients.fromJson(Map<String, dynamic> json) =>
+      _$MacroNutrientsFromJson(json);
 
   /// Total caloric value of these macros.
   double get calories => (protein * 4) + (carbs * 4) + (fat * 9);
