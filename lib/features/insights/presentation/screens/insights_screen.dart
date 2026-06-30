@@ -20,16 +20,32 @@ class InsightsScreen extends StatelessWidget {
       body: SafeArea(
         child: ListView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 80),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
           children: [
-            Text('INSIGHTS', style: theme.textTheme.bodySmall?.copyWith(
-              letterSpacing: 1.2,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textTertiary,
-            )),
-            const SizedBox(height: 4),
-            Text('AI & Forecast', style: theme.textTheme.headlineMedium),
-            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('INSIGHTS', style: theme.textTheme.bodySmall?.copyWith(
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textTertiary,
+                      )),
+                      const SizedBox(height: 4),
+                      Text('AI & Forecast', style: theme.textTheme.headlineMedium),
+                    ],
+                  ),
+                ),
+                IconButton.filledTonal(
+                  icon: const Icon(Icons.add_rounded),
+                  tooltip: 'Log weight',
+                  onPressed: () => _showLogWeightSheet(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
 
             // Weight progression card
             Container(
@@ -133,6 +149,99 @@ class InsightsScreen extends StatelessWidget {
       tags: ['deficit', 'progress'],
     ),
   ];
+
+  void _showLogWeightSheet(BuildContext context) {
+    final weightCtrl = TextEditingController();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final viewInsets = MediaQuery.of(ctx).viewInsets;
+        return Padding(
+          padding: EdgeInsets.only(bottom: viewInsets.bottom),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.divider,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text('Log weight',
+                  style: Theme.of(ctx).textTheme.titleLarge),
+                const SizedBox(height: 4),
+                Text(
+                  'Adds to your 30-day moving average.',
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: weightCtrl,
+                  autofocus: true,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Weight',
+                    suffixText: 'kg',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () {
+                    // TODO: wire to WeightRepository + nt_weight_entries.
+                    // For now, close the sheet and confirm visually.
+                    final w = double.tryParse(weightCtrl.text);
+                    if (w == null || w <= 0 || w > 500) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        const SnackBar(
+                          content: Text('Enter a weight between 0 and 500 kg'),
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Logged ${w.toStringAsFixed(1)} kg'),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.check_rounded),
+                  label: const Text('Save'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.brand,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _WeightChart extends StatelessWidget {

@@ -327,8 +327,9 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _ExerciseTile extends StatelessWidget {
-  const _ExerciseTile({required this.exercise});
+  const _ExerciseTile({required this.exercise, this.onAdd});
   final Exercise exercise;
+  final VoidCallback? onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -338,7 +339,7 @@ class _ExerciseTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () {},
+        onTap: () => _showDetail(context),
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -375,7 +376,11 @@ class _ExerciseTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.add, color: AppColors.brand, size: 20),
+              IconButton(
+                icon: Icon(Icons.add_circle, color: AppColors.brand, size: 28),
+                tooltip: 'Add to workout',
+                onPressed: onAdd ?? () => _showDetail(context),
+              ),
             ],
           ),
         ),
@@ -384,6 +389,198 @@ class _ExerciseTile extends StatelessWidget {
   }
 
   String _muscleEmoji(MuscleGroup m) {
+    switch (m) {
+      case MuscleGroup.chest: return '💪';
+      case MuscleGroup.back: return '🏋️';
+      case MuscleGroup.shoulders: return '🤸';
+      case MuscleGroup.arms: return '💪';
+      case MuscleGroup.legs: return '🦵';
+      case MuscleGroup.glutes: return '🍑';
+      case MuscleGroup.core: return '🧘';
+      case MuscleGroup.cardio: return '🏃';
+      case MuscleGroup.fullBody: return '🏋️';
+    }
+  }
+
+  void _showDetail(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _ExerciseDetailSheet(exercise: exercise),
+    );
+  }
+}
+
+/// Detail sheet for an exercise — instructions, sets/reps suggestion,
+/// quick-add to today's workout session.
+class _ExerciseDetailSheet extends StatelessWidget {
+  const _ExerciseDetailSheet({required this.exercise});
+  final Exercise exercise;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DraggableScrollableSheet(
+      initialChildSize: 0.55,
+      minChildSize: 0.35,
+      maxChildSize: 0.92,
+      builder: (_, controller) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: ListView(
+            controller: controller,
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Text(_muscleEmojiFor(exercise.primaryMuscle),
+                    style: const TextStyle(fontSize: 36)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(exercise.name, style: theme.textTheme.titleLarge),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 6,
+                          children: [
+                            _metaChip(exercise.primaryMuscle.label),
+                            _metaChip(exercise.equipment.label),
+                            _metaChip(exercise.difficulty.label),
+                            if (exercise.caloriesPerHour > 0)
+                              _metaChip('~${exercise.caloriesPerHour} kcal/hr'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              if (exercise.secondaryMuscles.isNotEmpty) ...[
+                Text('Secondary muscles',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  )),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  children: exercise.secondaryMuscles
+                      .map((m) => _metaChip(m.label))
+                      .toList(),
+                ),
+                const SizedBox(height: 24),
+              ],
+              Text('Instructions',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                )),
+              const SizedBox(height: 8),
+              Text(
+                exercise.instructions?.isNotEmpty == true
+                    ? exercise.instructions!
+                    : 'No instructions yet. Tap "Add to workout" to start logging sets.',
+                style: theme.textTheme.bodyMedium,
+              ),
+              if (exercise.tags.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 6,
+                  children: exercise.tags.map((t) => Chip(
+                    label: Text('#$t', style: const TextStyle(fontSize: 11)),
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: EdgeInsets.zero,
+                  )).toList(),
+                ),
+              ],
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      icon: const Icon(Icons.close_rounded),
+                      label: const Text('Close'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        // TODO: wire to active workout session once
+                        // workout logging UI exists (Tier 2 work).
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${exercise.name} queued for your next session'),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: const Text('Add to workout'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF6B35),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _metaChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF1EB),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(label, style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFFFF6B35),
+      )),
+    );
+  }
+
+  String _muscleEmojiFor(MuscleGroup m) {
     switch (m) {
       case MuscleGroup.chest: return '💪';
       case MuscleGroup.back: return '🏋️';
