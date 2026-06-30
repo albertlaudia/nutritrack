@@ -512,7 +512,6 @@ class _MaskPainter extends CustomPainter {
 
     // Viewfinder corners.
     final cornerLen = viewfinderSize * 0.12;
-    final cornerRadius = Radius.circular(viewfinderSize * 0.06);
     final cornerPaint = Paint()
       ..color = AppColors.brand
       ..strokeWidth = 4

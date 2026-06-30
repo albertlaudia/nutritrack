@@ -327,9 +327,8 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _ExerciseTile extends StatelessWidget {
-  const _ExerciseTile({super.key, required this.exercise, this.onAdd});
+  const _ExerciseTile({super.key, required this.exercise});
   final Exercise exercise;
-  final VoidCallback? onAdd;
 
   @override
   Widget build(BuildContext context) {
