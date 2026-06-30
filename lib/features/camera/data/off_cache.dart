@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../../core/sync/pocketbase_client.dart';
+import '../../dashboard/domain/macro_nutrients.dart';
 import 'off_client.dart';
 
 /// Three-tier barcode lookup: in-memory → PocketBase cache → Open Food Facts.

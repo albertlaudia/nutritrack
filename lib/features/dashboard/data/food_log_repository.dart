@@ -92,13 +92,13 @@ class FoodLogRepository {
         sodium: e.sodium,
       ),
       loggedAt: e.loggedAt,
-      slot: MealSlot.values.firstWhere(
+      slot: domain.MealSlot.values.firstWhere(
         (s) => s.name == e.slot,
-        orElse: () => MealSlot.snack,
+        orElse: () => domain.MealSlot.snack,
       ),
-      source: LogSource.values.firstWhere(
+      source: domain.LogSource.values.firstWhere(
         (s) => s.name == e.source,
-        orElse: () => LogSource.custom,
+        orElse: () => domain.LogSource.custom,
       ),
       confidence: e.confidence,
       brand: e.brand,

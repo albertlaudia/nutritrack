@@ -10,6 +10,7 @@ import '../../features/dashboard/data/food_log_repository.dart';
 import '../../features/dashboard/domain/food_log_entry.dart' as domain;
 import '../../features/dashboard/domain/macro_nutrients.dart';
 import '../../features/settings/domain/user_profile.dart';
+export '../../features/settings/domain/user_profile.dart';
 import '../../features/workout/data/workout_repository.dart';
 
 part 'core_providers.g.dart';

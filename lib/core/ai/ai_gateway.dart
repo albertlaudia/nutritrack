@@ -156,13 +156,14 @@ class OpenRouterAIGateway implements AIGateway {
   }) {
     // Buffer the stream into one complete file, then submit to Whisper,
     // then parse the transcript through the same JSON pipeline.
-    return audioStream
-        .scan<Uint8List>(
-          (acc, chunk) => acc..addAll(chunk),
-          Uint8List(0),
-        )
-        .last
-        .asyncExpand((bytes) async* {
+    return Stream.fromFuture(
+      audioStream
+          .scan<Uint8List>(
+            (acc, chunk, _) => acc..addAll(chunk),
+            Uint8List(0),
+          )
+          .last,
+    ).asyncExpand((bytes) async* {
       if (bytes.isEmpty) {
         yield const VoiceLogProgress(isFinal: true);
         return;

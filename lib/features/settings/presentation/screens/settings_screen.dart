@@ -492,8 +492,8 @@ class _StepReview extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: t.bodyMedium)),
-          Text(value, style: t.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Expanded(child: Text(label, style: t.textTheme.bodyMedium)),
+          Text(value, style: t.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -529,7 +529,7 @@ class _MacroTargetPreview extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: pct.clamp(0.0, 1.0),
+                value: pct.clamp(0.0, 1.0).toDouble(),
                 minHeight: 8,
                 backgroundColor: AppColors.surfaceMuted,
                 valueColor: AlwaysStoppedAnimation(color),

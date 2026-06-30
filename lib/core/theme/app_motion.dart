@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class AppMotion {
   AppMotion._();
@@ -14,12 +15,12 @@ class AppMotion {
   static const Curve playful = Cubic(0.34, 1.56, 0.64, 1.0);
   static const Curve standard = Curves.easeInOutCubic;
 
-  static PageRouteBuilder<T> sharedAxisPage<T>(Widget page) {
-    return PageRouteBuilder<T>(
+  static CustomTransitionPage<T> sharedAxisPage<T>(Widget page) {
+    return CustomTransitionPage<T>(
+      child: page,
       transitionDuration: slow,
       reverseTransitionDuration: fast,
-      pageBuilder: (_, __, ___) => page,
-      transitionsBuilder: (_, anim, __, child) {
+      transitionsBuilder: (context, anim, secondaryAnim, child) {
         final scale = Tween<double>(begin: 0.92, end: 1.0).animate(
           CurvedAnimation(parent: anim, curve: emphasized),
         );
@@ -32,12 +33,12 @@ class AppMotion {
   /// Vertical slide-up transition (Material 3 expressive) for modal-ish routes
   /// like the camera screen — the user feels they are descending into the
   /// camera rather than sliding from a side.
-  static PageRouteBuilder<T> verticalSharedAxisPage<T>(Widget page) {
-    return PageRouteBuilder<T>(
+  static CustomTransitionPage<T> verticalSharedAxisPage<T>(Widget page) {
+    return CustomTransitionPage<T>(
+      child: page,
       transitionDuration: slow,
       reverseTransitionDuration: fast,
-      pageBuilder: (_, __, ___) => page,
-      transitionsBuilder: (_, anim, __, child) {
+      transitionsBuilder: (context, anim, secondaryAnim, child) {
         final slide = Tween<Offset>(
           begin: const Offset(0, 0.06),
           end: Offset.zero,

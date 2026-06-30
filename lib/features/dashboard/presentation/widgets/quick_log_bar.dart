@@ -105,7 +105,7 @@ class _QuickLogBarState extends ConsumerState<QuickLogBar>
           setState(() => _pendingEntries = progress.items);
         }
         if (progress.error != null) {
-          setState(() => _lastError = progress.error);
+          setState(() => _lastError = progress.error as String?);
           HapticFeedback.heavyImpact();
         }
         if (progress.isFinal) {

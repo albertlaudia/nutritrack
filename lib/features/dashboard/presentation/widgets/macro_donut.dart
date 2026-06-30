@@ -57,9 +57,9 @@ class _MacroDonutState extends State<MacroDonut> with TickerProviderStateMixin {
       _prevConsumed = _progress.value;
       _progress = Tween<double>(
         begin: _prevConsumed,
-        end: widget.target == 0 ? 0 : (widget.consumed / widget.target).clamp(0, 1.5),
+        end: widget.target == 0 ? 0 : (widget.consumed / widget.target).clamp(0.0, 1.5).toDouble(),
       ).animate(CurvedAnimation(parent: _progressCtrl, curve: AppMotion.emphasized));
-      _progressCtrl.reset()..forward();
+      _progressCtrl..reset()..forward();
       if (widget.consumed > widget.target && old.consumed <= widget.target) {
         _pulseCtrl.forward(from: 0);
       }
