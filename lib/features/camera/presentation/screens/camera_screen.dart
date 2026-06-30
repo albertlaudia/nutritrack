@@ -53,10 +53,8 @@ class CameraControllerState {
   });
   final CameraController controller;
   final CameraDescription? lensDirection;
-  bool get isReady => controller.value.isInitialized && !controller.value.previewPaused;
-  bool get isTakingPicture =>
-      controller.value.mode == CameraMode.picture &&
-      controller.value.isTakingPicture;
+  bool get isReady => controller.value.isInitialized && !controller.value.isPreviewPaused;
+  bool get isTakingPicture => controller.value.isTakingPicture;
 }
 
 /// Riverpod-managed camera controller. Disposed automatically.

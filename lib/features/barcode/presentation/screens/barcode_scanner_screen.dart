@@ -226,8 +226,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     context.pop();
   }
 
-  Future<void> _submitManual() async {
-    final raw = _manualCtrl.text.trim();
+  Future<void> _submitManual(String raw) async {
     if (raw.isEmpty) return;
     HapticFeedback.selectionClick();
     await _lookup(raw);
@@ -454,7 +453,7 @@ class _ScannerView extends StatelessWidget {
         MobileScanner(
           controller: controller,
           onDetect: onDetect,
-          errorBuilder: (_, error) => _ErrorView(
+          errorBuilder: (context, error, child) => _ErrorView(
             message: _BarcodeError.friendlyMessage(error),
             onRetry: () {},
             onManual: () {},
@@ -522,25 +521,25 @@ class _MaskPainter extends CustomPainter {
 
     final rrect = RRect.fromRectAndRadius(rect, cornerRadius);
     // Top-left
-    canvas.drawLine(rrect.topLeft + const Offset(cornerLen * 0.4, 0),
-        rrect.topLeft, cornerPaint);
-    canvas.drawLine(rrect.topLeft,
-        rrect.topLeft + const Offset(0, cornerLen * 0.4), cornerPaint);
+    canvas.drawLine(rect.topLeft + Offset(cornerLen * 0.4, 0),
+        rect.topLeft, cornerPaint);
+    canvas.drawLine(rect.topLeft,
+        rect.topLeft + Offset(0, cornerLen * 0.4), cornerPaint);
     // Top-right
-    canvas.drawLine(rrect.topRight - const Offset(cornerLen * 0.4, 0),
-        rrect.topRight, cornerPaint);
-    canvas.drawLine(rrect.topRight,
-        rrect.topRight - const Offset(0, cornerLen * 0.4), cornerPaint);
+    canvas.drawLine(rect.topRight - Offset(cornerLen * 0.4, 0),
+        rect.topRight, cornerPaint);
+    canvas.drawLine(rect.topRight,
+        rect.topRight - Offset(0, cornerLen * 0.4), cornerPaint);
     // Bottom-left
-    canvas.drawLine(rrect.bottomLeft + const Offset(cornerLen * 0.4, 0),
-        rrect.bottomLeft, cornerPaint);
-    canvas.drawLine(rrect.bottomLeft,
-        rrect.bottomLeft - const Offset(0, cornerLen * 0.4), cornerPaint);
+    canvas.drawLine(rect.bottomLeft + Offset(cornerLen * 0.4, 0),
+        rect.bottomLeft, cornerPaint);
+    canvas.drawLine(rect.bottomLeft,
+        rect.bottomLeft - Offset(0, cornerLen * 0.4), cornerPaint);
     // Bottom-right
-    canvas.drawLine(rrect.bottomRight - const Offset(cornerLen * 0.4, 0),
-        rrect.bottomRight, cornerPaint);
-    canvas.drawLine(rrect.bottomRight,
-        rrect.bottomRight - const Offset(0, cornerLen * 0.4), cornerPaint);
+    canvas.drawLine(rect.bottomRight - Offset(cornerLen * 0.4, 0),
+        rect.bottomRight, cornerPaint);
+    canvas.drawLine(rect.bottomRight,
+        rect.bottomRight - Offset(0, cornerLen * 0.4), cornerPaint);
   }
 
   @override

@@ -3,10 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_colors.dart';
-import '../features/dashboard/presentation/screens/dashboard_screen.dart';
-import '../features/insights/presentation/screens/insights_screen.dart';
-import '../features/settings/presentation/screens/settings_screen.dart';
-import '../features/workout/presentation/screens/workout_screen.dart';
 
 /// Root shell with 4-tab bottom nav. Each tab is its own GoRouter branch.
 class ShellScaffold extends ConsumerWidget {
