@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/providers/core_providers.dart';
-import '../../domain/user_profile.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -82,7 +81,7 @@ class _SummaryCard extends StatelessWidget {
           Text(
             profile.goal.label.toUpperCase(),
             style: theme.textTheme.labelSmall?.copyWith(
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withValues(alpha: 0.85),
               letterSpacing: 1.5,
               fontWeight: FontWeight.w700,
             ),
@@ -98,7 +97,7 @@ class _SummaryCard extends StatelessWidget {
           Text(
             'kcal / day',
             style: theme.textTheme.bodyLarge?.copyWith(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
           const SizedBox(height: 16),
@@ -127,7 +126,7 @@ class _SummaryMetric extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1),
           ),
           const SizedBox(height: 2),
           Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),

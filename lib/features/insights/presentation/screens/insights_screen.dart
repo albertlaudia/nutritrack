@@ -311,7 +311,7 @@ class _WeightChart extends StatelessWidget {
             spots: spots,
             isCurved: true,
             curveSmoothness: 0.3,
-            color: AppColors.brand.withOpacity(0.25),
+            color: AppColors.brand.withValues(alpha: 0.25),
             barWidth: 2,
             dotData: FlDotData(show: false),
           ),
@@ -329,8 +329,8 @@ class _WeightChart extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  AppColors.brand.withOpacity(0.15),
-                  AppColors.brand.withOpacity(0.0),
+                  AppColors.brand.withValues(alpha: 0.15),
+                  AppColors.brand.withValues(alpha: 0.0),
                 ],
               ),
             ),
@@ -354,7 +354,7 @@ class _InsightCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -365,7 +365,7 @@ class _InsightCard extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
+                  color: color.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 20),

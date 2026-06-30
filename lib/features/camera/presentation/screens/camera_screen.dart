@@ -139,7 +139,6 @@ class CameraScreen extends ConsumerStatefulWidget {
 class _CameraScreenState extends ConsumerState<CameraScreen>
     with WidgetsBindingObserver {
   CameraPhase _phase = CameraPhase.permission;
-  PermissionStatus _cameraStatus = PermissionStatus.denied;
   String? _errorMessage;
   File? _capturedFile;
   List<FoodLogEntry> _recognized = [];
@@ -197,7 +196,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
   Future<void> _requestPermission() async {
     final status = await Permission.camera.request();
-    _cameraStatus = status;
     if (status.isGranted) {
       await _initCamera();
     } else if (status.isPermanentlyDenied) {
@@ -438,7 +436,7 @@ class _PermissionPrompt extends StatelessWidget {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: AppColors.brand.withOpacity(0.15),
+                  color: AppColors.brand.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -461,7 +459,7 @@ class _PermissionPrompt extends StatelessWidget {
                 'and log the macros. Nothing leaves your device without your OK.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withOpacity(0.75),
+                  color: Colors.white.withValues(alpha: 0.75),
                 ),
               ),
               if (message != null) ...[
@@ -494,13 +492,13 @@ class _PermissionPrompt extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onPickFromGallery,
                   icon: Icon(Icons.photo_library_outlined,
-                    color: Colors.white.withOpacity(0.9)),
+                    color: Colors.white.withValues(alpha: 0.9)),
                   label: Text(
                     'Pick from gallery instead',
-                    style: TextStyle(color: Colors.white.withOpacity(0.9)),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -585,7 +583,7 @@ class _ScanGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.06)
+      ..color = Colors.white.withValues(alpha: 0.06)
       ..strokeWidth = 1;
     // Rule-of-thirds grid lines.
     final w = size.width, h = size.height;
@@ -621,7 +619,7 @@ class _BottomControls extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withOpacity(0.6)],
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.6)],
         ),
       ),
       child: Row(
@@ -645,7 +643,7 @@ class _BottomControls extends StatelessWidget {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.brand.withOpacity(0.4),
+                    color: AppColors.brand.withValues(alpha: 0.4),
                     blurRadius: 24,
                     spreadRadius: 2,
                   ),
@@ -656,7 +654,7 @@ class _BottomControls extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: disabled ? AppColors.brand.withOpacity(0.5) : AppColors.brand,
+                    color: disabled ? AppColors.brand.withValues(alpha: 0.5) : AppColors.brand,
                   ),
                   child: disabled
                       ? const Padding(
@@ -696,9 +694,9 @@ class _CircleControl extends StatelessWidget {
       height: 52,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(onTap == null ? 0.08 : 0.18),
+        color: Colors.white.withValues(alpha: onTap == null ? 0.08 : 0.18),
       ),
-      child: Icon(icon, color: Colors.white.withOpacity(onTap == null ? 0.4 : 1.0)),
+      child: Icon(icon, color: Colors.white.withValues(alpha: onTap == null ? 0.4 : 1.0)),
     );
     if (onTap == null) return btn;
     return Tooltip(
@@ -730,7 +728,7 @@ class _AnalyzingOverlay extends StatelessWidget {
           opacity: 0.4,
           child: Image.file(image, fit: BoxFit.cover),
         ),
-        Container(color: Colors.black.withOpacity(0.6)),
+        Container(color: Colors.black.withValues(alpha: 0.6)),
         Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -739,7 +737,7 @@ class _AnalyzingOverlay extends StatelessWidget {
                 width: 96, height: 96,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.brand.withOpacity(0.2),
+                  color: AppColors.brand.withValues(alpha: 0.2),
                 ),
                 child: const Padding(
                   padding: EdgeInsets.all(20),
@@ -766,7 +764,7 @@ class _AnalyzingOverlay extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'AI is examining your photo',
-                style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
               ),
             ],
           ),
@@ -876,11 +874,11 @@ class _ErrorOverlay extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onGallery,
                   icon: Icon(Icons.photo_library_outlined,
-                    color: Colors.white.withOpacity(0.9)),
+                    color: Colors.white.withValues(alpha: 0.9)),
                   label: Text('Pick from gallery',
-                    style: TextStyle(color: Colors.white.withOpacity(0.9))),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9))),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -908,7 +906,7 @@ class _TopBar extends StatelessWidget {
       child: Row(
         children: [
           Material(
-            color: Colors.black.withOpacity(0.4),
+            color: Colors.black.withValues(alpha: 0.4),
             shape: const CircleBorder(),
             child: InkWell(
               customBorder: const CircleBorder(),
@@ -923,7 +921,7 @@ class _TopBar extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(

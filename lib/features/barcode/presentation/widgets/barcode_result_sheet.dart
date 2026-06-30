@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_motion.dart';
 import '../../../camera/data/off_client.dart';
 import '../../../dashboard/domain/food_log_entry.dart';
 
@@ -232,9 +231,9 @@ class _BarcodeResultSheetState extends State<BarcodeResultSheet> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.amber.withOpacity(0.08),
+        color: AppColors.amber.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.amber.withOpacity(0.4)),
+        border: Border.all(color: AppColors.amber.withValues(alpha: 0.4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

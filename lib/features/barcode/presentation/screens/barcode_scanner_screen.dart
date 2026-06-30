@@ -357,7 +357,7 @@ class _PermissionView extends StatelessWidget {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: AppColors.brand.withOpacity(0.15),
+                  color: AppColors.brand.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -380,7 +380,7 @@ class _PermissionView extends StatelessWidget {
                 'info from a free open database of \u003e2 million products.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withOpacity(0.75),
+                  color: Colors.white.withValues(alpha: 0.75),
                 ),
               ),
               if (message != null) ...[
@@ -411,11 +411,11 @@ class _PermissionView extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onManual,
                   icon: Icon(Icons.keyboard_alt_outlined,
-                    color: Colors.white.withOpacity(0.9)),
+                    color: Colors.white.withValues(alpha: 0.9)),
                   label: Text('Enter barcode manually',
-                    style: TextStyle(color: Colors.white.withOpacity(0.9))),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9))),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -506,7 +506,7 @@ class _MaskPainter extends CustomPainter {
     canvas.drawPath(
       overlay,
       Paint()
-        ..color = Colors.black.withOpacity(0.55)
+        ..color = Colors.black.withValues(alpha: 0.55)
         ..style = PaintingStyle.fill,
     );
 
@@ -519,7 +519,6 @@ class _MaskPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final rrect = RRect.fromRectAndRadius(rect, cornerRadius);
     // Top-left
     canvas.drawLine(rect.topLeft + Offset(cornerLen * 0.4, 0),
         rect.topLeft, cornerPaint);
@@ -592,9 +591,9 @@ class _AnimatedScanLineState extends State<_AnimatedScanLine>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.brand.withOpacity(0),
+                          AppColors.brand.withValues(alpha: 0),
                           AppColors.brand,
-                          AppColors.brand.withOpacity(0),
+                          AppColors.brand.withValues(alpha: 0),
                         ],
                       ),
                     ),
@@ -625,7 +624,7 @@ class _ScannerBottomControls extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withOpacity(0.6)],
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.6)],
         ),
       ),
       child: Row(
@@ -692,7 +691,7 @@ class _ScanControlButton extends StatelessWidget {
                 width: 52, height: 52,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.18),
+                  color: Colors.white.withValues(alpha: 0.18),
                 ),
                 child: Icon(icon, color: Colors.white, size: 24),
               ),
@@ -724,7 +723,7 @@ class _LookupOverlay extends StatelessWidget {
               width: 96, height: 96,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.brand.withOpacity(0.2),
+                color: AppColors.brand.withValues(alpha: 0.2),
               ),
               child: const Padding(
                 padding: EdgeInsets.all(20),
@@ -745,7 +744,7 @@ class _LookupOverlay extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               barcode,
-              style: TextStyle(color: Colors.white.withOpacity(0.7)),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
             ),
           ],
         ),
@@ -787,7 +786,7 @@ class _ResultView extends StatelessWidget {
               errorWidget: (_, __, ___) => Container(color: Colors.black),
             ),
           ),
-        Container(color: Colors.black.withOpacity(0.5)),
+        Container(color: Colors.black.withValues(alpha: 0.5)),
         DraggableScrollableSheet(
           initialChildSize: 0.55,
           minChildSize: 0.4,
@@ -828,7 +827,7 @@ class _NotFoundView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.search_off_rounded,
-                color: Colors.white.withOpacity(0.5), size: 72),
+                color: Colors.white.withValues(alpha: 0.5), size: 72),
               const SizedBox(height: 24),
               const Text(
                 'Product not in database',
@@ -843,7 +842,7 @@ class _NotFoundView extends StatelessWidget {
                 'Barcode $barcode isn\'t in the Open Food Facts database. '
                 'You can enter the nutrition manually or try again.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
               ),
               const SizedBox(height: 32),
               SizedBox(
@@ -867,11 +866,11 @@ class _NotFoundView extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onManual,
                   icon: Icon(Icons.edit_rounded,
-                    color: Colors.white.withOpacity(0.9)),
+                    color: Colors.white.withValues(alpha: 0.9)),
                   label: Text('Enter manually',
-                    style: TextStyle(color: Colors.white.withOpacity(0.9))),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9))),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -942,11 +941,11 @@ class _ErrorView extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onManual,
                   icon: Icon(Icons.keyboard_alt_outlined,
-                    color: Colors.white.withOpacity(0.9)),
+                    color: Colors.white.withValues(alpha: 0.9)),
                   label: Text('Enter barcode manually',
-                    style: TextStyle(color: Colors.white.withOpacity(0.9))),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9))),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -1069,7 +1068,7 @@ class _TopBar extends StatelessWidget {
       child: Row(
         children: [
           Material(
-            color: Colors.black.withOpacity(0.4),
+            color: Colors.black.withValues(alpha: 0.4),
             shape: const CircleBorder(),
             child: InkWell(
               customBorder: const CircleBorder(),
@@ -1084,7 +1083,7 @@ class _TopBar extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(

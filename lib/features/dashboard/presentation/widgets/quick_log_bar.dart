@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:record/record.dart';
 
-import '../../../../core/ai/ai_gateway.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_motion.dart';
 import '../../../../shared/providers/core_providers.dart';
@@ -27,7 +25,6 @@ class QuickLogBar extends ConsumerStatefulWidget {
 class _QuickLogBarState extends ConsumerState<QuickLogBar>
     with SingleTickerProviderStateMixin {
   late final AnimationController _holdCtrl;
-  late final Animation<double> _holdScale;
   late final Animation<double> _holdGlow;
 
   final _recorder = AudioRecorder();
@@ -42,9 +39,6 @@ class _QuickLogBarState extends ConsumerState<QuickLogBar>
   void initState() {
     super.initState();
     _holdCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
-    _holdScale = Tween<double>(begin: 1.0, end: 0.92).animate(
-      CurvedAnimation(parent: _holdCtrl, curve: AppMotion.emphasized),
-    );
     _holdGlow = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _holdCtrl, curve: AppMotion.emphasized),
     );
@@ -180,7 +174,7 @@ class _QuickLogBarState extends ConsumerState<QuickLogBar>
           border: Border.all(color: AppColors.divider),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
@@ -244,7 +238,7 @@ class _QuickLogBarState extends ConsumerState<QuickLogBar>
                                 boxShadow: _isRecording
                                     ? [
                                         BoxShadow(
-                                          color: AppColors.error.withOpacity(_holdGlow.value * 0.5),
+                                          color: AppColors.error.withValues(alpha: _holdGlow.value * 0.5),
                                           blurRadius: 24,
                                           spreadRadius: 2,
                                         ),
@@ -388,8 +382,6 @@ class _RecordingPanelState extends State<_RecordingPanel>
   }
 
   @override
-
-  @override
   void dispose() {
     _pulse.dispose();
     super.dispose();
@@ -397,11 +389,6 @@ class _RecordingPanelState extends State<_RecordingPanel>
 
   @override
   Widget build(BuildContext context) {
-    // "Idle" = panel mounted but no transcript, no items, not saving → we are
-    // still actively listening. Anything else has reached a terminal state.
-    final isListening = widget.transcript.isEmpty &&
-        widget.pendingCount == null &&
-        !widget.saving;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
@@ -419,7 +406,7 @@ class _RecordingPanelState extends State<_RecordingPanel>
                   width: 12,
                   height: 12,
                   decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.6 + _pulse.value * 0.4),
+                    color: AppColors.error.withValues(alpha: 0.6 + _pulse.value * 0.4),
                     shape: BoxShape.circle,
                   ),
                 );

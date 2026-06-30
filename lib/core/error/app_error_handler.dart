@@ -82,7 +82,6 @@ class ErrorBoundary extends StatefulWidget {
 
 class _ErrorBoundaryState extends State<ErrorBoundary> {
   Object? _error;
-  StackTrace? _stack;
 
   @override
   void initState() {
@@ -97,10 +96,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
     if (_error != null) {
       return widget.fallback ?? _DefaultErrorFallback(
         error: _error!,
-        onRetry: () => setState(() {
-          _error = null;
-          _stack = null;
-        }),
+        onRetry: () => setState(() => _error = null),
       );
     }
     return widget.child;

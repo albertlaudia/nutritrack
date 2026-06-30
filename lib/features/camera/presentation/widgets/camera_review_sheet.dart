@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -352,7 +350,7 @@ class _ReviewItemCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: lowConfidence
-              ? AppColors.amber.withOpacity(0.5)
+              ? AppColors.amber.withValues(alpha: 0.5)
               : AppColors.divider,
           width: lowConfidence ? 1.5 : 1,
         ),

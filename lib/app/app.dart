@@ -53,7 +53,7 @@ class _BootSplash extends StatelessWidget {
               width: 96,
               height: 96,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: const Center(
@@ -75,7 +75,7 @@ class _BootSplash extends StatelessWidget {
               width: 24,
               height: 24,
               child: CircularProgressIndicator(
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withValues(alpha: 0.7),
                 strokeWidth: 2,
               ),
             ),
