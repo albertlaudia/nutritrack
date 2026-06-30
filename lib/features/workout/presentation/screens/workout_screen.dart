@@ -378,7 +378,7 @@ class _ExerciseTile extends StatelessWidget {
               IconButton(
                 icon: Icon(Icons.add_circle, color: AppColors.brand, size: 28),
                 tooltip: 'Add to workout',
-                onPressed: onAdd ?? () => _showDetail(context),
+                onPressed: () => _showDetail(context),
               ),
             ],
           ),

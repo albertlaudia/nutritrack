@@ -181,7 +181,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       _errorMessage = null;
     });
     final status = await Permission.camera.status;
-    _cameraStatus = status;
     if (status.isGranted) {
       await _initCamera();
     } else if (status.isPermanentlyDenied) {
