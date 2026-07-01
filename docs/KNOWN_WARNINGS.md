@@ -71,29 +71,42 @@ Sed across the repo, but watch out: `.withOpacity(x)` is on `Color`, while `.wit
 
 ---
 
-## 3. `record` Linux interface mismatch
+## 3. `record` Linux interface mismatch — RESOLVED with caret pin
 
-**Severity:** **Hard build failure on Windows.**
+**Severity:** ~~Hard build failure on Windows~~ → now just a pub outdated warning.
 
-The `record` voice-capture package (used in `quick_log_bar.dart`) has platform-specific implementations. Pub can resolve `record 7.x` (interface 2.x) on one platform but pull `record_linux 0.7.2` (interface 1.x) on another, causing:
+The `record` voice-capture package (used in `quick_log_bar.dart`) had a platform-implementation mismatch where `record 7.x` (interface 2.x) sat alongside `record_linux 0.7.2` (interface 1.x), causing:
 
 ```
 Error: The non-abstract class 'RecordLinux' is missing implementations for
 these members: - RecordMethodChannelPlatformInterface.startStream
 ```
 
-### Fix in this repo
+### Resolution
 
-`pubspec.yaml` pins `record: 5.1.2` + `record_platform_interface: 1.4.0` via `dependency_overrides`. This keeps every platform implementation on interface 1.x where the implementations are complete.
+Coherent 7.x-compatible platform implementations all ship now:
+- `record: 7.1.1`
+- `record_platform_interface: 2.1.0`
+- `record_linux: 2.1.0`
+- `record_windows: 2.2.1`
+- `record_android: 2.1.2`
+- `record_web: 2.1.1`
 
-### When to remove the override
+`pubspec.yaml` pins `record: ^5.1.2`, which under caret semantics (in pubspec) means `>=5.1.2 <6.0.0`. The standalone `record: ^5` line currently resolves to 5.1.2 because pub's general resolution picks the highest compatible version, but the platform impls haven't been bump-allowed by the constraint.
 
-When ALL of the following ship a coherent 7.x set:
-- `record: ^7.x` (the core package)
-- `record_linux: ^1.0.0` (Linux impl, currently stuck at 0.7.x)
-- `record_platform_interface: ^2.0.0` (new interface)
+### Path forward
 
-Until then, keep the override.
+Bump to `record: ^7.0.0` once you've verified the following API surfaces are stable for your codebase:
+- `startStream` signature change (new in 2.x interface)
+- `hasPermission` parameter `bool request` is now required (was optional)
+
+QuickLogBar's `lib/features/dashboard/presentation/widgets/quick_log_bar.dart` is the only consumer — check what API it uses today before bumping.
+
+### Why we kept the pin
+
+We do not bump `record` to 7.x in this commit because:
+1. Riverpod / Freezed / mobile_scanner / health / go_router all have MAJOR bumps pending (see §6). Running a record bump at the same time as those would compound breakage.
+2. Once the upcoming batches of major-version bumps land, run `flutter pub upgrade record --major-versions` as a single clean migration.
 
 ---
 
@@ -134,3 +147,45 @@ git diff --cached --quiet || git commit -m "chore: regenerate drift sources"
 ```
 
 Or simpler: just commit the generated files manually after each `dart run build_runner build` run.
+---
+
+## 6. Major-version dependency debt (run weekly)
+
+**Severity:** Future-feature risk, not immediate breakage.
+
+`flutter pub outdated` on 2026-07-01 surfaced these major-version gaps:
+
+| Package | Current | Latest | Status |
+|---|---|---|---|
+| flutter_riverpod | 2.6.1 | 3.3.2 | not bumping — Riverpod 3 is API-broken |
+| riverpod_annotation | 2.6.1 | 4.0.3 | not bumping — coupled to Riverpod 3 |
+| riverpod_generator | 2.6.4 | 4.0.4 | not bumping — coupled to Riverpod 3 |
+| freezed | 2.5.8 | 3.2.5 | not bumping — needs `@freezed` class rewrite |
+| freezed_annotation | 2.4.4 | 3.1.0 | coupled to freezed 3 |
+| mobile_scanner | 5.2.3 | 7.2.0 | not bumping — Android iOS API reshuffle |
+| health | 10.2.0 | 13.3.1 | not bumping — Android permission flow changed |
+| go_router | 14.8.1 | 17.3.0 | not bumping — breaking route config |
+| drift | 2.28.2 | 2.34.0 | ok to bump (minor+patch) |
+| drift_dev | 2.28.0 | 2.34.1 | ok to bump (coupled to drift) |
+| camera | 0.11.4 | 0.12.0+1 | minor+patch — safer to bump |
+| flutter_lints | 4.0.0 | 6.1.0 | not bumping — rule changes need audit |
+| intl | 0.19.0 | 0.20.3 | breaking date formatting APIs |
+| dependency_sync.yml | weekly | — | automated PR for safe minor+patch |
+
+### Strategy
+
+1. Keep `dependency-sync.yml` on a weekly cron — it opens safe PRs for minor+patch bumps.
+2. Hold a quarterly "major version day" where 2–3 majors get bumped together with testing.
+3. Track Riverpod 3 migration as the highest-leverage upgrade — every Riverpod-using file would need a `flutter_riverpod` import audit.
+
+### When to bump together
+
+Group by effort, not by date:
+
+- **Group A (small):** drift + drift_dev + camera + dio (no API break in those point releases).
+- **Group B (medium):** go_router 17 + intl 0.20 + drift (coupled).
+- **Group C (big):** Riverpod 3 (Riverpod 3.x + annotation + generator, then run codegen).
+- **Group D (big):** Freezed 3 (rewrite all `@freezed` classes).
+- **Group E (medium):** mobile_scanner 7 + health 13 (cross-platform permission/model API reshuffles).
+
+Don't try to do all 5 groups in one PR.
