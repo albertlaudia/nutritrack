@@ -61,7 +61,7 @@ dependencies:
   # (No direct SDK — calls go through our AI gateway repo)
 
   # ── Camera, voice, images ─────────────────────────────────────
-  camera: ^0.11.0+2
+  camera: ^0.12.0+1
   image_picker: ^1.1.2
   image: ^4.2.0
   # record is pinned via dependency_overrides below — see comment there
