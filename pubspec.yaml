@@ -43,7 +43,10 @@ dependencies:
   cached_network_image: ^3.4.1    # Disk + memory cache for remote images
 
   # ── Health platforms ──────────────────────────────────────────
-  # health: ^10.2.0                 # Disabled: unused and incompatible with current Kotlin/AGP
+  # NOTE: health package removed entirely — Apple Health / Google Fit / Health
+  # Connect integration is NOT in v1 scope. The weight-entry feature uses our
+  # own WeightRepository. If/when we re-add it, bump to ^13.3.1 (which fixes
+  # the v2 embedding issues that broke 10.x). See docs/KNOWN_WARNINGS.md §3-7.
 
   # ── UI ────────────────────────────────────────────────────────
   google_fonts: ^6.2.1

@@ -189,3 +189,47 @@ Group by effort, not by date:
 - **Group E (medium):** mobile_scanner 7 + health 13 (cross-platform permission/model API reshuffles).
 
 Don't try to do all 5 groups in one PR.
+
+---
+
+## 7. health package removed (was breaking Android build)
+
+**Was:** `health: ^10.2.0` declared in pubspec.yaml.
+**Now:** removed entirely.
+
+`health 10.2.0` was incompatible with v2 Android plugin embedding:
+
+```
+e: HealthPlugin.kt:51:48 Unresolved reference 'Registrar'
+e: HealthPlugin.kt:513:45 Unresolved reference 'Registrar'
+e: HealthPlugin.kt:514:63 Unresolved reference 'messenger'
+e: HealthPlugin.kt:516:35 Unresolved reference 'addActivityResultListener'
+```
+
+Even after commenting out the import, the package still showed up in `pubspec.lock` and Android Gradle kept trying to compile the plugin. Commenting out wasn't enough — the dep had to be removed.
+
+### Why we're not bringing it back in v1
+
+- The Insights screen reads weights from our own `WeightRepository` (Drift table), not from Apple/Google Health.
+- No user-facing feature currently requires HealthKit/Fit/Health Connect.
+- Re-adding `health 13.3.1` later would require: linking HealthKit entitlement in iOS, adding Health Connect permissions in Android, wiring data pulls on app start, and reconciling units. ~3 days of work.
+- The `minSdkVersion = 26` bump in your earlier commit was specifically for `health`'s Android requirement. With `health` removed, you could drop back to `minSdkVersion = 23` (~Android 6.0). I deliberately left it at 26 because:
+  - `camera: ^0.11.x` and `mobile_scanner: ^5.x` both want 21+ but 26 gives more reliable CameraX behavior
+  - 26 = Android 8.0 = ~95% of active devices in 2026
+  - It's a one-way door; relaxing later is fine but tightening later is breaking
+
+### If you decide to re-add
+
+```yaml
+# pubspec.yaml
+health: ^13.3.1
+```
+
+Then:
+1. Add iOS entitlement (`HealthKitUsageDescription` in Info.plist)
+2. Add Android permissions (`READ_WEIGHT`, `READ_BODY_FAT`)
+3. Wire `HealthService` with platform-specific calls
+4. Cache health data locally in our `biometric_entries` Drift table
+5. Schedule periodic resync
+
+Don't skip step 4 — HealthKit silently drops data when cache fills.
