@@ -43,7 +43,7 @@ dependencies:
   cached_network_image: ^3.4.1    # Disk + memory cache for remote images
 
   # ── Health platforms ──────────────────────────────────────────
-  health: ^10.2.0                 # Apple Health + Google Fit + Health Connect
+  # health: ^10.2.0                 # Disabled: unused and incompatible with current Kotlin/AGP
 
   # ── UI ────────────────────────────────────────────────────────
   google_fonts: ^6.2.1
