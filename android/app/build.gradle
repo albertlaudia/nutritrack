@@ -30,7 +30,7 @@ android {
 
     defaultConfig {
         applicationId = "com.nutritrack.app"
-        minSdkVersion = flutter.minSdkVersion                          // Mobile_scanner + health need 23+
+        minSdkVersion = 26                                             // health plugin requires 26
         targetSdk = 36
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
