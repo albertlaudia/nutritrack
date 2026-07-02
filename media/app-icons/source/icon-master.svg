@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="NutriTrack app icon">
+  <title>NutriTrack</title>
+  <desc>A bold orange rounded square. Cut from the top-right is a creamy white wedge shaped like a removed pie-slice. Three short orange data lines sit inside the cream area, and a small orange dot lives below center. Reads at 60px as a clean orange rounded square; reads at 1024px as a plate-with-a-bite-taken-out mark.</desc>
+
+  <defs>
+    <!-- Body: full brand gradient (deep orange → bright orange → amber, diagonal TL → BR) -->
+    <linearGradient id="nt-body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#E85A2C"/>
+      <stop offset="55%"  stop-color="#FF6B35"/>
+      <stop offset="100%" stop-color="#FFB627"/>
+    </linearGradient>
+
+    <!-- Plate: warm off-white with subtle warmth -->
+    <radialGradient id="nt-plate" cx="0.4" cy="0.4" r="0.8">
+      <stop offset="0%"   stop-color="#FFFDF8"/>
+      <stop offset="100%" stop-color="#FBE8D1"/>
+    </radialGradient>
+
+    <!-- Subtle shine overlay on the body -->
+    <linearGradient id="nt-shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Outer rounded-square clip -->
+    <clipPath id="nt-body-clip">
+      <rect x="0" y="0" width="1024" height="1024" rx="232" ry="232"/>
+    </clipPath>
+  </defs>
+
+  <!-- 1. Body: brand gradient rounded square -->
+  <g clip-path="url(#nt-body-clip)">
+    <rect x="0" y="0" width="1024" height="1024" fill="url(#nt-body)"/>
+
+    <!-- 2. Plate: full cream circle on top of the orange body -->
+    <circle cx="512" cy="512" r="460" fill="url(#nt-plate)"/>
+
+    <!-- 3. Plate rim: subtle stroke -->
+    <circle cx="512" cy="512" r="460" fill="none" stroke="#E85A2C" stroke-width="6" opacity="0.20"/>
+
+    <!-- 4. Plate shine -->
+    <circle cx="512" cy="512" r="460" fill="url(#nt-shine)" opacity="0.45"/>
+
+    <!-- 5. The WEDGE CUT: an orange wedge painted OVER the cream, in the top-right quadrant. -->
+    <!-- This is the unique mark: a pie-slice "removed" from the plate, filled with the brand gradient. -->
+    <path d="M 512 512
+             L 512 80
+             A 432 432 0 0 1 944 512
+             Z"
+          fill="url(#nt-body)"/>
+
+    <!-- 6. Wedge highlight (light overlay on top portion of wedge) -->
+    <path d="M 512 80
+             A 432 432 0 0 1 944 512
+             L 512 512
+             Z"
+          fill="url(#nt-shine)" opacity="0.7"/>
+
+    <!-- 7. Wedge boundary stroke: soft white edge where cut meets cream -->
+    <path d="M 512 80 A 432 432 0 0 1 944 512"
+          fill="none" stroke="#FFFDF8" stroke-width="4" opacity="0.6"/>
+
+    <!-- 8. Data lines INSIDE the cream area. -->
+    <!-- Three short orange bars on cream — they read as "AI parsed this meal" at any size. -->
+    <g fill="#FF6B35">
+      <rect x="232" y="490" width="220" height="24" rx="12"/>
+      <rect x="232" y="566" width="170" height="24" rx="12"/>
+      <rect x="232" y="642" width="220" height="24" rx="12"/>
+    </g>
+
+    <!-- 9. Anchor mark: a bold orange dot below-right of data, sits on cream. -->
+    <!-- Hints at "log / record" — a target reticle. -->
+    <circle cx="700" cy="730" r="60" fill="#FF6B35"/>
+    <circle cx="700" cy="730" r="60" fill="none" stroke="#FFFDF8" stroke-width="6" opacity="0.7"/>
+
+    <!-- 10. Subtle global shine overlay -->
+    <rect x="0" y="0" width="1024" height="1024" fill="url(#nt-shine)"/>
+  </g>
+</svg>
