@@ -52,10 +52,8 @@ enum Goal {
   recomposition,        // Maintenance + high protein
   leanBulk,             // +250 kcal/day, ~0.25 kg/wk gain
   aggressiveBulk,       // +500 kcal/day, ~0.5 kg/wk gain
-  maintenance,
-}
+  maintenance;
 
-extension GoalX on Goal {
   String get label {
     switch (this) {
       case Goal.aggressiveCut:
