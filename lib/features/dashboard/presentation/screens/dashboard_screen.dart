@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/providers/core_providers.dart';
-import '../../../settings/domain/user_profile.dart';
 import '../../domain/food_log_entry.dart';
 import '../../domain/macro_nutrients.dart';
 import '../widgets/macro_donut.dart';
