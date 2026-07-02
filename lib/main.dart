@@ -5,9 +5,9 @@ import 'app/app.dart';
 import 'core/error/app_error_handler.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  AppErrorHandler.install();
   AppErrorHandler.runGuarded(() {
+    WidgetsFlutterBinding.ensureInitialized();
+    AppErrorHandler.install();
     runApp(const ProviderScope(child: NutriTrackApp()));
   });
 }

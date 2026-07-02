@@ -11,10 +11,8 @@ enum ActivityLevel {
   light,          // 1-3 days/wk
   moderate,       // 3-5 days/wk
   active,         // 6-7 days/wk
-  athletic,       // Physical job + training
-}
+  athletic;       // Physical job + training
 
-extension ActivityLevelX on ActivityLevel {
   String get label {
     switch (this) {
       case ActivityLevel.sedentary:
