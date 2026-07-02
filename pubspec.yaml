@@ -36,7 +36,7 @@ dependencies:
   camera: ^0.12.0+1
   image_picker: ^1.1.2
   image: ^4.2.0
-  record: ^5.1.2                  # Voice capture — must stay >= 5.1.2; see KNOWN_WARNINGS.md
+  record: ^7.1.1                  # Voice capture (stream-to-transcription)
   just_audio: ^0.9.40             # Audio playback for TTS / cues
   permission_handler: ^11.3.1
   mobile_scanner: ^5.2.3          # Barcode/QR scanning (EAN, UPC, etc.)
