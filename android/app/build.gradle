@@ -30,7 +30,7 @@ android {
 
     defaultConfig {
         applicationId = "com.nutritrack.app"
-        minSdkVersion = 26                                             // health plugin requires 26
+        minSdkVersion = 26
         targetSdk = 36
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
@@ -62,6 +62,6 @@ android {
 flutter { source = "../.." }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.20"
     implementation "androidx.multidex:multidex:2.0.1"
 }
