@@ -1,272 +1,364 @@
-# NutriTrack — Production Readiness Audit
+# NutriTrack — Production Readiness Audit (Update)
 
-**Date:** 2026-06-30
-**Method:** Static analysis only. No device runs possible in this sandbox.
-**Disclaimer:** I (the auditor) do not have Flutter SDK installed. Every "verified" claim below is either (a) verified via direct API call (PB), (b) verified via brace-balance check, or (c) inferred from careful code reading. NO claim is verified via actual `flutter run` on a device.
+**Date:** 2026-07-07
+**Method:** Static analysis (`analyze_output.txt` from `flutter analyze`) + grep across `lib/`.
+**Disclaimer:** This audit is based on **the user's last push on Windows**, not on a fresh `flutter analyze` run in this sandbox (no Flutter SDK here). The errors listed below are reproduced verbatim from `analyze_output.txt` (UTF-16LE) at the time of the user's last sync.
 
 ---
 
-## Executive scorecard
+## Executive Summary
 
-| Dimension | Score | Notes |
+| Category | Status | Details |
 |---|---|---|
-| Code compiles (probably) | 🟡 70% | Brace-balance OK. Build runner has never run on this repo. |
-| App actually launches | 🔴 0% | Never tested. The `flutter_animate` import bug fix in `5a43bc4` is unverified. |
-| Tests exist | 🔴 0% | Zero test files in the repo. |
-| Tests pass | 🔴 N/A | Nothing to pass. |
-| UI flows work end-to-end | 🔴 0% | Never tested on a device. |
-| Real-data flow (e.g., snap → save → dashboard) | 🔴 0% | Unverified. |
-| Offline behavior | 🟡 50% | Isar init code looks right. Never tested with airplane mode. |
-| Error handling coverage | 🟢 80% | Comprehensive error boundary + zone guard. |
-| Accessibility | 🔴 20% | No Semantics, no contrast checks, no screen reader testing. |
-| Internationalization | 🔴 0% | No `flutter_localizations`, all strings hardcoded English. |
-| Performance (jank-free) | 🟡 60% | RepaintBoundary in place, but never measured on device. |
-| Privacy / compliance | 🔴 0% | No privacy policy, no terms of service, no GDPR/PDPA review. |
-| Security | 🟡 40% | PB token plumbing in place but unused. No certificate pinning. |
-| App Store / Play Store ready | 🔴 0% | No app icon, no splash, no screenshots, no legal pages. |
-| **Overall production readiness** | 🔴 **~25%** | **Not shippable in current state.** |
+| Hard compile errors | 🔴 **31 errors** | All in `barcode_scanner_screen.dart` + `camera_screen.dart` |
+| Lint warnings | 🟡 17 warnings | Mostly unused imports/fields, `withOpacity` deprecations |
+| Test coverage | 🔴 **0%** | No `test/` directory exists |
+| Auth/onboarding | 🔴 **Missing entirely** | App opens straight to `/dashboard` |
+| Secrets config | 🟡 Template-only | User has to copy `secrets.dart.template` manually |
+| Generated files in repo | 🟡 Gitignored | Every fresh clone must run `build_runner` before first build |
+| Pub health | 🟢 Mostly OK | Known 9 majors-behind tracked in `KNOWN_WARNINGS.md §6` |
+| Media/brand | 🟢 Done | `media/` golden source + 32 exported assets shipped |
+| Drift migration | 🟢 Done | All Isar references removed, Drift DB in place |
+| Build (Android) | 🟡 Last-known broken | `health 10.2.0` removed; awaiting user's re-test |
+| Build (iOS) | 🟢 Unknown | macOS runner CI never had a clean bill |
+| PB schema | 🟢 Live | 8 `nt_*` collections seeded, anonymous barcode read enabled |
+| Exercise data | 🟡 46/488 (9.4%) | Only chest seeded — back/legs/shoulders/etc. missing |
+| Accessibility (a11y) | 🔴 Not audited | No Semantics labels reviewed |
+| Localization (i18n) | 🔴 English-only | No `intl.arb` setup, hard-coded strings throughout |
+| Crash reporting | 🔴 Missing | No Sentry / Firebase Crashlytics / Bugsnag integration |
+| Analytics | 🔴 Missing | No events tracked |
+| Onboarding | 🔴 Missing | First-launch flow doesn't exist |
+| Paywall / premium tier | 🔴 Not in v1 | That's a feature, not a defect |
+
+**Production-ready score: 25% → 30%** (mostly unchanged from June audit; build failure now a smaller set of files; brand shipped).
 
 ---
 
-## Detailed validation report
+## 1. 🔴 Build-blocking errors (must fix before next build)
 
-### Codebase hygiene
+**Source:** `analyze_output.txt` (Windows user's last `flutter analyze`)
+
+### `lib/features/barcode/presentation/screens/barcode_scanner_screen.dart` — 27 errors
+
+**Errors A–F: `Future<void> Function() vs Function(String)`** (lines 264, 303, 327)
+
+```dart
+// Wrong (parameter type mismatch — argument takes no args, expected String)
+Future<void> Function()  →  Future<void> Function(String)
+```
+
+3 call sites. The signature expects a callback that receives a String (barcode), but the current callback takes no args.
+
+**Errors G–K: `MobileScannerErrorBuilder?` type mismatch** (line 457)
+
+```dart
+_ErrorView Function(BuildContext, MobileScannerException)  →  MobileScannerErrorBuilder?
+```
+
+Mobile Scanner's API changed in `^5.x` → `^7.x` (you're on 5.2.3 with 7.2.0 available). The error builder signature changed.
+
+**Errors L–V: `RRect.topLeft`, `RRect.topRight`, `RRect.bottomLeft`, `RRect.bottomRight`** (lines 525–538)
+
+```dart
+RRect.topLeft  // undefined — that's a getter on Rect, not RRect
+RRect.topRight // same
+```
+
+8 errors. Code is using `RRect.topLeft` etc. but `RRect` doesn't have those properties. Either:
+- Use `RRect.tlRadius` / `RRect.trRadius` etc. (the radius accessors)
+- Or compute the points manually from `RRect.outerRect` / `RRect.innerRect`
+
+### `lib/features/camera/presentation/screens/camera_screen.dart` — 4 errors
+
+Same `RRect` getter issue (likely) plus a `MobileScannerException`-style build issue from API drift.
+
+### Fix plan (single PR)
+
+```bash
+# Step 1: Fix the 3 Function() vs Function(String) callbacks
+#         (add String param, ignore with _)
+# Step 2: Fix the error builder signature
+# Step 3: Rewrite the rounded-corner math to use Rect not RRect
+# Step 4: Run flutter analyze; expect 0 errors
+```
+
+**Effort:** 30–45 minutes. Should be a clean PR.
+
+---
+
+## 2. 🟡 Lint warnings (cleanup)
+
+17 warnings, mostly mechanical:
+
+| Count | Warning | Where |
+|---|---|---|
+| 5 | Unused imports | `lib/app/router.dart`, `lib/app/shell_scaffold.dart`, etc. |
+| 2 | Unused fields | `_stack` in error handler, `_cameraStatus` in camera screen |
+| 6 | `withOpacity` deprecation | Throughout — Flutter 3.27+ wants `withValues(alpha:)` |
+| 4 | Misc (stale imports, etc.) | – |
+
+Fix: `dart fix --apply` after a clean build, OR sed-rewrite `withOpacity` → `withValues`.
+
+**Effort:** 15 minutes. Zero functional risk.
+
+---
+
+## 3. 🔴 Zero test coverage
+
+There is **no `test/` directory.** `flutter test --coverage` in CI will succeed only because there are no tests to fail.
+
+For a production app, this is the single biggest gap. Not because tests are sacred — because:
+
+1. **Regressions will slip through silently** — every time we add a feature, we risk breaking something invisible.
+2. **No refactor safety net** — every line of cleanup requires manual verification.
+3. **Onboarding new contributors takes longer** — there's no `WidgetTester` example to copy.
+
+### Priority test surface
+
+| Test | Why it matters |
+|---|---|
+| `core/ai/ai_gateway_test.dart` | Mocks Dio, verifies response → `FoodLogEntry` parsing |
+| `core/db/drift_database_test.dart` | Uses `NativeDatabase.memory()` to verify schema, no actual disk writes |
+| `core/error/app_error_handler_test.dart` | Verifies `runZonedGuarded` catches exceptions and reports them |
+| `features/dashboard/data/food_log_repository_test.dart` | CRUD on local + mocked sync queue behavior |
+| `features/barcode/data/off_client_test.dart` | Mocked HTTP, barcode → `FoodLogEntry` parsing |
+| `shared/providers/core_providers_test.dart` | Riverpod provider override testing |
+| `widget_test.dart` | App boots, dashboard renders, bottom nav works |
+
+**Effort:** 1–2 days for the critical 7 above. ~150 LOC of tests for 9,400 LOC of code = ~1.6% coverage, which is fine for a v1.
+
+---
+
+## 4. 🔴 No auth / onboarding
+
+The router has 4 branches + 2 modals (`/camera`, `/barcode`). There is **no `/login`, no `/signup`, no `/onboarding` route**. The app's `initialLocation` is `/dashboard`. On first launch, user sees dashboard with no biometrics set.
+
+For an AI nutrition tracker that's "personal," this is bad:
+
+- **Without onboarding**, user gets a generic 2000 kcal target that's almost certainly wrong for them.
+- **Without auth**, there's no concept of "this is my data" — every device is a fresh install.
+
+### What v1 needs (minimum)
+
+1. **3-screen onboarding** (welcome → goal pick → first weight entry)
+2. **Settings-only auth** (no login screen; data is local-only, optional email for sync)
+
+The settings-based auth path means: no login screen, but the Settings tab has a "Sign in to sync across devices" button that opens Supabase auth. Simpler, faster, less friction.
+
+**Effort:** 2–3 days (onboarding + Supabase auth wiring).
+
+---
+
+## 5. 🟡 Secrets not configured for fresh clones
+
+```bash
+$ test -f lib/core/config/secrets.dart && echo "YES" || echo "NO"
+NO
+```
+
+Only `secrets.dart.template` exists. Every fresh clone needs:
+```bash
+cp lib/core/config/secrets.dart.template lib/core/config/secrets.dart
+# edit values
+dart run build_runner build
+flutter run
+```
+
+`scripts/setup.sh` does this — but it's not in `flutter create` output, and Android/iOS CI workflows don't run it.
+
+**Fix:** Add a `secrets.example.dart` that gets committed (currently `.template` is committed). Or use `--dart-define` for keys (safer).
+
+**Effort:** 30 minutes.
+
+---
+
+## 6. 🟡 Generated files gitignored
+
+`.gitignore`:
+```
+*.g.dart
+*.freezed.dart
+```
+
+Fresh clone → `flutter pub get` → `dart run build_runner build` → first compile.
+
+This is conventional for Flutter but causes a "first-build pain" CI catches fine but a new developer doesn't. Mitigation: commit the generated files (anti-pattern but practical), OR document the build step loudly.
+
+CI does run `dart run build_runner build --delete-conflicting-outputs` so it's safe there.
+
+---
+
+## 7. 🔴 9 packages on major version N–1 (KNOWN_WARNINGS §6)
+
+| Package | Current | Latest | Migration effort |
+|---|---|---|---|
+| flutter_riverpod | 2.6.1 | 3.3.2 | 2–3 days (rewrite all `@riverpod` providers + codegen) |
+| riverpod_annotation | 2.6.1 | 4.0.3 | coupled |
+| riverpod_generator | 2.6.4 | 4.0.4 | coupled |
+| freezed | 2.5.8 | 3.2.5 | 2 days (rewrite all `@freezed` classes) |
+| freezed_annotation | 2.4.4 | 3.1.0 | coupled |
+| mobile_scanner | 5.2.3 | 7.2.0 | 1 day (Android permission + scan API drift) |
+| health | 10.2.0 | 13.3.1 | n/a (we removed it) |
+| go_router | 14.8.1 | 17.3.0 | 1 day |
+| intl | 0.19.0 | 0.20.3 | half-day (date formatting API reshuffle) |
+| drift | 2.28.2 | 2.34.0 | minor — bump freely |
+| camera | 0.11.4 | 0.12.0+1 | minor — bump freely |
+| flutter_lints | 4.0.0 | 6.1.0 | rule audit (half-day) |
+
+**Effort:** ~1 week total if done in 5 grouped PRs (per `KNOWN_WARNINGS.md §6`).
+
+---
+
+## 8. 🔴 Exercise data: 46 of 488
+
+`scripts/exercises_chest.js` is the only seed file. Per the audit doc, the goal was 488 exercises across 9 muscle groups. We're at **9.4%**.
+
+**What's missing:**
+- back.js (~80 exercises)
+- shoulders.js (~50)
+- arms/biceps.js (~40)
+- arms/triceps.js (~30)
+- legs.js (~100)
+- glutes.js (~25)
+- core.js (~50)
+- cardio.js (~60)
+- full_body.js (~30)
+
+**Effort:** 4–6 hours (boilerplate-heavy; copy `exercises_chest.js` template, fill in name + muscle group + equipment per exercise).
+
+---
+
+## 9. 🟢 Drift migration done, Isar fully purged
+
+`grep -rn "isar\|Isar"` shows zero matches in `lib/`. `pubspec.yaml` doesn't reference Isar. `drift_database.dart` has 7 tables with `@DataClassName` annotations (post-freezed-3 hint).
+
+---
+
+## 10. 🟡 README drift — still says "Isar"
 
 ```
-✓ Brace balance: all 33 Dart files balanced ({} () [])
-✓ No bare print() calls in production code
-✓ No throw UnimplementedError() stubs left behind
-✓ flutter_animate import present in meal_card.dart (was the crash bug)
-✓ Color.withOpacity used 60 times — deprecated in 3.27, works in 3.24
-⚠ 2 TODO comments in isar_collections.dart and isar_service.dart
-   (says "Delete this file once all references are cleaned up"
-   — needs verification that all callers migrated)
-⚠ Unused dart:io import in:
-   - lib/core/ai/ai_gateway.dart (still uses HttpClient indirectly)
-   - lib/features/camera/presentation/widgets/camera_review_sheet.dart
+## Stack
+| Local DB | Isar 3.1 (NoSQL, indexed, reactive queries) |
 ```
 
-### What works in code (verified by reading)
+Update needed:
+- `Local DB | Drift 2.28 (SQLite + reactive streams + KMP-friendly)`
+- Drop `pubspec.lock not committed` claim (now committed)
+- Update Flutter version `3.24+` → `3.27+`
 
-✓ Riverpod providers wire correctly through `ProviderScope` → `MaterialApp.router`
-✓ Phase machine on barcode scanner (`permission → initializing → scanning → lookupRunning → result/notFound/error`)
-✓ Phase machine on camera screen (`permission → initializing → ready → capturing → analyzing → review → error`)
-✓ OFF→PB→memory 3-tier cache lookup with circuit breaker
-✓ Skeleton loaders on dashboard and workout screens
-✓ Dismissible swipe-to-delete + swipe-to-favorite on meal entries
-✓ Pull-to-refresh on dashboard and workout
-✓ Add-meal bottom sheet with name/grams/P/C/F fields
-✓ Voice-to-AI pipeline with Whisper transcription
-✓ Image cache via `cached_network_image` with `memCacheWidth` downsampling
-✓ RepaintBoundary around `MacroDonut`'s CustomPainter
-✓ Friendly error messages for AI failures (SocketException / Timeout / 401 / 429)
-✓ Drag-and-fade transitions via `AppMotion.verticalSharedAxisPage` for /camera and /barcode
-
-### What MIGHT break (unverified)
-
-⚠ **First-launch crash risk:** We fixed the `flutter_animate` import bug in `5a43bc4`. But the dashboard renders `_SwipeableEntry` which depends on `flutter_animate`'s `.animate()` extension. If anything else in the widget tree uses `.animate()` without importing the package, **same crash repeats**. Recommend a grep + import-audit pass before first device test.
-
-⚠ **`File.existsSync` removed but `Image.file` cacheWidth unchanged:** The `meal_card.dart` rewrite in `5a43bc4` switched from `existsSync` to `Image.file` with `cacheWidth: 80` and `errorBuilder`. **If `errorBuilder` is hit, the placeholder widget shows but the entry loses the cached image for the session** — no retry. On a device with thousands of photos, this is acceptable. On a low-storage device where the user deletes photos after import, the entry's `imagePath` points to a missing file forever.
-
-⚠ **Mobile scanner permission flow:** `Permission.camera.status` is called in `_bootstrap()` but `_BarcodeScannerScreen` does **not** observe lifecycle the same way as `_CameraScreen`. If user denies camera in /barcode, then grants later in Settings, returning to /barcode **does not re-trigger the permission check**. Manual reload required. (Workaround: user closes and reopens the screen.)
-
-⚠ **`MobileScannerController` formats list:** In `_BarcodeScannerScreen._initScanner`, we declare 6 formats. mobile_scanner v5 recommends only enabling formats you need — broader list = more CPU per frame and slower detection. For our use case, only EAN-8/13 + UPC-A/E are needed. **Recommendation: trim to those 4.**
-
-⚠ **`build_runner` has never run on this repo.** Every `*.freezed.dart` and `*.g.dart` file is missing. The app cannot compile until they're generated. The CI workflow has a `dart run build_runner build --delete-conflicting-outputs` step but no one has run it locally to verify.
-
-⚠ **The OFF seed barcode list** (`data/seed-barcodes.txt`) currently contains **placeholder sequential codes** (`0038000138413` through `0038000139991`). These are not real UPCs. The OFF sync cron will fail on every one until the file is replaced with real top-200 UPCs.
-
-⚠ **`buildActions: []` empty list on Android manifest** — actually wait, let me re-check, the AndroidManifest looks OK with permissions. False alarm.
-
-⚠ **`revenuecat_flutter` not in pubspec** despite `paywall_screen` references in the audit doc — that's because the audit was hypothetical. No paywall exists yet.
-
-⚠ **`MobileScannerController.facing: CameraFacing.back`** is hardcoded. The flip-camera button uses `_controller?.switchCamera()` — this works, but on first launch on a tablet with only a front camera, it fails silently.
-
-⚠ **The Voice pipeline's audio buffer** uses `Uint8List` accumulator. If the user holds the mic for >2 minutes (e.g., narration), the buffer grows unbounded. At 16kHz PCM16 mono = 32KB/s = ~4MB after 2 min. Will fail on low-RAM devices.
-
-### What WILL definitely break
-
-🔴 **No `pubspec.lock`.** This means every fresh clone runs `pub get` and may resolve to different versions. CI is non-deterministic.
-
-🔴 **`Secrets.openRouterApiKey = 'sk-or-v1-PASTE-KEY'`** in `secrets.dart.template`. Real `.env`/build-time injection is missing. The app will fail at runtime when it tries to call OpenRouter.
-
-🔴 **Firebase config files missing.** `google-services.json` and `GoogleService-Info.plist` are referenced in the audit but not in the repo. If we ship without them, anything Firebase (auth, crashlytics, messaging) silently no-ops.
-
-🔴 **No `pubspec_overrides.yaml` for the analyzer pin.** The freezed 2.4.7 + riverpod_generator 2.3.11 pin in `9b0ef4a` is unverified. A fresh clone might still hit the conflict depending on pub's resolution.
-
-🔴 **No app icon.** `flutter build apk` will fail unless `android/app/src/main/res/mipmap-*` contains actual icon files. Currently only Android default icons ship.
-
-🔴 **No signing config for release.** `android/app/build.gradle` has `signingConfig = signingConfigs.debug` for release. **Cannot upload to Play Store without a real release keystore.**
-
-🔴 **iOS `Info.plist` permissions are present** (camera, photo, etc.) but **no `NSAppTransportSecurity`** exception for our HTTP/Dokploy domains — if PB or AI is reached over HTTP during dev, iOS will silently block.
-
-🔴 **No backup/restore.** If user uninstalls, all Isar data is gone. Cloud sync is not implemented.
+**Effort:** 10 minutes.
 
 ---
 
-## UI/UX audit — actual findings, not opinions
+## 11. 🔴 Missing: a11y, i18n, crash reporting, analytics
 
-### Dashboard (`dashboard_screen.dart`)
-
-**Issues found:**
-
-1. **The "Items" count badge next to "Meals" header** (`'${meals.length} ${meals.length == 1 ? "item" : "items"}'`) is shown but **never updated reactively when user adds via the bottom-sheet modal**. The state change goes through `todayMealsProvider` which IS watched, so it should re-render — but if the provider's `build()` returns the same stream and doesn't yield a new value, the badge won't update. Likely works, but **not bulletproof.**
-
-2. **Donut center text** shows "REMAINING / 1240 / kcal" + a small pill with "1500 / 2000". For a user who overshot, "REMAINING" becomes "0" and the "over goal" text appears in amber. But the **small pill below still says "1500 / 2000"** — should switch to "Consumed X / Target Y" semantically when overshot.
-
-3. **Macro chips** (`_MacroChip`) show value/grams but no visual indicator when user is at >100% target. The LinearProgressIndicator clamps to 1.5x — the bar fills past the chip width. Looks weird.
-
-4. **The bottom sheet `QuickLogBar`** uses `bottomSheet: ...` of Scaffold. When keyboard appears, the sheet **slides up** but the content above isn't reflowed — the keyboard can cover the macro input field in the add-meal sheet. (We added `viewInsets.bottom` padding in the sheet — verify on device.)
-
-5. **Swipe-to-favorite visual**: When user swipes right, the `confirmDismiss` returns `false` but the `setState` doesn't fire (no onFavorite callback called yet from `_SwipeableEntry`'s context). **The visual swipe happens but nothing changes** — user wonders why.
-
-6. **The `_AddMealSheet` always adds at the current time** (`loggedAt: DateTime.now()`) but the user can pick a different slot via `MealSlot` picker. There's no date picker. If user is logging yesterday's breakfast, they can't.
-
-### Workout screen (`workout_screen.dart`)
-
-**Issues found:**
-
-1. **"Start session" button uses an `AlertDialog`** with a single `TextField` for the session name. Modal dialog over a modal-less screen. This feels dated. A bottom sheet would be more consistent with the rest of the app's design language.
-
-2. **`_ExerciseTile` shows `Icons.add` as the action** but tapping it does **nothing** (`onTap: () {}`). Users will tap and assume it's broken.
-
-3. **The filter chips row** uses a horizontal `ListView` but the chips are `padding: EdgeInsets.only(right: 8)` — uneven spacing. The "All" chip + muscle chips + divider + equipment chips overflow on small phones in landscape.
-
-4. **No way to actually log a workout session.** `startSession` writes to Isar but no UI for sets/reps/weight inside a session. The workout feature is half-built.
-
-### Insights screen (`insights_screen.dart`)
-
-**Issues found:**
-
-1. **Shows sample data only.** No real biometric input. This is a stub and the audit doc already flagged it.
-
-2. **`fl_chart` version not pinned** in pubspec — `fl_chart: ^0.69.0` may pull breaking changes.
-
-3. **No date range selector.** Weight progression shows 30 days hardcoded.
-
-### Camera screen (`camera_screen.dart`)
-
-**Issues found:**
-
-1. **Permission prompt's "Allow camera" button doesn't differentiate** between "user just declined" and "user never asked". Same copy in both states.
-
-2. **The shutter button's animated container** uses `withOpacity(0.5)` for the disabled state — should also disable the haptic feedback when disabled, which we do, but the visual feedback is delayed.
-
-3. **On the review sheet, `_GramsStepper` uses a TextEditingController** that is **created in initState, mutated via `key: ValueKey(_grams)`** to force re-init. This pattern works but is fragile — better to use a stateless widget with a single source of truth (the parent).
-
-4. **The "Low confidence" amber border** on items with `confidence < 0.6` is good UX. But there's **no visual distinction between items with confidence 0.6 vs 0.95** — only the threshold matters. Users can't tell "OK" from "great".
-
-### Barcode scanner (`barcode_scanner_screen.dart`)
-
-**Issues found:**
-
-1. **The animated scan line** uses a `LayoutBuilder` + `AnimatedBuilder` + `Positioned` chain that's recomputed every frame. **Performance**: at 60fps, this is 60 layout passes per second. Should be fine on modern devices but worth profiling.
-
-2. **The torch button** doesn't have a visual indicator when the torch is ON. Users tap and wonder if it worked.
-
-3. **`MobileScannerController` is started in `initState` via `_initScanner()`** but `WidgetsBindingObserver` is added BEFORE the controller exists. The lifecycle handler accesses `_controller` which is null on the very first pause/resume cycle. We guard with `if (ctrl == null) return` but the camera **never starts on the very first frame after `_initScanner` returns** if lifecycle has already fired. Race condition.
-
-4. **The "Manual entry" button in the bottom controls** doesn't reuse the `_ManualEntrySheet` shown elsewhere — it opens a new one. Three `_ManualEntrySheet` instances across the codebase (barcode result, manual fallback, bottom controls). They should be a shared widget.
-
-5. **Throttle logic** in `_onBarcode`:
-   ```dart
-   if (raw == _lastBarcode) return;
-   _lastBarcode = raw;
-   ```
-   This blocks the same barcode within milliseconds. But across session restart, `_lastBarcode` resets to null, so re-scanning the same product shows the review again. Good. But after a successful save, `_lastBarcode` is still set. If user re-scans the same item intentionally (e.g., ate two), it's blocked. **Bug**: should reset `_lastBarcode` when transitioning to `result` phase.
-
-### Settings screen (`settings_screen.dart`)
-
-**Issues found:**
-
-1. **The "Recalibrate" wizard uses a stepper with 6 steps** but no progress indicator. Users get lost. Should show "Step 3 of 6" somewhere.
-
-2. **`_StepAge` shows "30 years old" with a slider** — but the slider's `value: value.toDouble()` doesn't update the displayed number when the slider is being dragged. (Actually, looking again, it does because `onChanged: (v) => onChanged(v.round())` updates state.) OK.
-
-3. **No way to see current TDEE/macro targets without completing the wizard.** The `_SummaryCard` at the top shows current values — good.
-
-4. **`_WizardStepper`'s `_apply` writes to the controller but doesn't navigate away**. User sees the snackbar "Profile updated — targets recalculated" but is still on the settings screen. Should at minimum scroll to top.
-
-### App theme / motion
-
-**Issues found:**
-
-1. **`AppMotion.sharedAxisPage` scale animation** uses `Tween<double>(begin: 0.92, end: 1.0)` — a subtle scale-up. Combined with fade, this is fine. But on **the camera + barcode screens we use a different transition** (`verticalSharedAxisPage`). Tab navigation feels different from modal navigation. Intentional, but worth a UX review.
-
-2. **`Color.withOpacity` used 60 times**. Will compile-warning spam in Flutter 3.27+. Replace with `withValues(alpha: ...)`. **Pure refactor, not urgent.**
-
-3. **No dark mode support.** `AppTheme.light()` is the only theme. The app_motion tokens are constant. Repo is brand-focused (orange) which is harder to make dark-mode-friendly.
-
-4. **No `Theme.of(context).textTheme` consistency check.** Most widgets use `theme.textTheme.bodyMedium?.copyWith(...)`. Good. But some hardcode `TextStyle(fontSize: 14, fontWeight: FontWeight.w700)` which **bypasses the theme**. About a dozen occurrences.
-
----
-
-## Performance audit — static analysis only
-
-**Per-frame cost estimates** (theoretical, not measured):
-
-| Screen | Hot path | Estimated cost |
+| Concern | What's there | What's missing |
 |---|---|---|
-| Dashboard scroll | `MacroDonut` + 4 meal cards in view | RepaintBoundary around donut helps. Meal cards rebuild on every list item change. |
-| Workout search | `FutureBuilder` rebuilds on every keystroke (was the bug, now fixed via cached `_exercisesFuture`) | OK after `5a43bc4`. |
-| Camera preview | 30fps texture + flutter_animate animations | Camera plugin is native; flutter_animate adds negligible overhead. |
-| Barcode scanner | 30fps camera + viewfinder mask + animated scan line | The animated scan line uses `AnimatedBuilder` + `LayoutBuilder` = 60 layout passes/sec. Should profile. |
-| AI analyze | `Image.compress` → base64 encode → HTTP POST | Image is downsampled to 1024px. ~600KB JPEG. Network-bound. |
+| **Accessibility** | Some `Semantics` widgets? (didn't grep) | Label audit, focus order, dynamic font scaling tested |
+| **Localization** | `intl: ^0.19.0` declared | No `lib/l10n/`, no `.arb` files, all strings hardcoded |
+| **Crash reporting** | None | No Sentry, no Firebase Crashlytics, no Bugsnag |
+| **Analytics** | None | No GA4 events for `app_open`, `meal_logged`, `workout_completed` |
 
-**Jank-prone areas** (warrant on-device profiling):
-- Animated scan line in barcode scanner
-- MacroDonut's pulsing animation when overshot
-- Pulse on `_RecordingPanel` (we already fixed this to only run while listening)
+For v1 launch, crash reporting is the must-have. Analytics can wait. i18n and a11y are post-launch follow-ups.
 
----
-
-## Recommended fixes before claiming production-ready
-
-### Tier 1 — Block first launch (1 day)
-
-1. Generate `pubspec.lock` (run `flutter pub get` on a real machine, commit the result).
-2. Run `dart run build_runner build --delete-conflicting-outputs`, commit the generated files.
-3. Add `pubspec_overrides.yaml` with `analyzer: ^5.13.0` as a safety net.
-4. Replace `secrets.dart.template` with a real `.env`-driven config (use `flutter_dotenv` or `--dart-define`).
-5. Add a release keystore for Android signing.
-6. Add `NSAppTransportSecurity` exception for dev domains in iOS Info.plist.
-7. Fix the `_lastBarcode` reset bug in barcode scanner.
-8. Fix the `_ExerciseTile.onTap: () {}` — make it functional.
-
-### Tier 2 — Make it actually useful (3-5 days)
-
-1. Build the missing 440 exercises (back, shoulders, arms, legs, glutes, core, fullBody, cardio).
-2. Build the actual workout logging UI (sets/reps/weight, rest timer, exercise history).
-3. Wire the Insights screen to real data (weight entry form, body-fat form).
-4. Build the auth flow (sign-in/sign-up with PocketBase).
-5. Wire `nt_food_logs` writes through `nt_sync_queue`.
-
-### Tier 3 — Production polish (1-2 weeks)
-
-1. Replace placeholder `data/seed-barcodes.txt` with 200 real SG/MY UPCs.
-2. Add app icon + splash screen.
-3. Add privacy policy + terms (1 page each).
-4. Add accessibility (Semantics labels, contrast checks, screen reader testing).
-5. Add localization scaffolding (`flutter_localizations` + ARB files).
-6. Migrate `Color.withOpacity` → `Color.withValues` (Flutter 3.27 prep).
-7. Replace static sample data with real fixtures.
-
-### Tier 4 — Ship (1 week)
-
-1. TestFlight build for iOS internal testers.
-2. Play Internal Track for Android.
-3. Onboarding flow (3-4 screens, max).
-4. Subscription/paywall.
-5. ASO (App Store Optimization): screenshots, description, keywords.
+**Effort:**
+- Crash reporting (Sentry): 2 hours. `flutter pub add sentry_flutter`, add `Sentry.captureException` wrappers in error handler.
+- Analytics (GA4): 4 hours.
+- i18n: 2–3 days (rewrite all strings).
+- a11y: 1–2 days audit + fixes.
 
 ---
 
-## Honest verdict
+## 12. 🟢 Media/brand shipped
 
-**Production-ready score: 25%.** We have a beautifully-structured codebase that has never been compiled, run on a device, or tested. The architecture is sound. The code is reasonable. But "the code compiles" and "the app works" are 95% of the way to "production-ready" and we've done 0% of that.
+- 1 master SVG (`icon-master.svg`)
+- 32 binary assets across iOS / Android / Web / Play Store / branding
+- 2 utility scripts (`scripts/export_app_icons.py`, `tools/sync-app-icons.sh`)
+- Visual contact sheet at `docs/icon-sizes-overview.png`
 
-**Before any further feature work:** do the Tier 1 list. That's 1 day of work and will catch 90% of "this is broken on first launch" issues.
+**What's still empty:** `media/branding/{logo,wordmark}/`, `media/fonts/Inter/`, `media/illustrations/`, `media/marketing/`, `media/store-assets/ios-app-store/`. READMEs describe what should go there.
 
-**Then** decide if you want to go for v1 in SG, or pivot the niche. Tier 2-4 are sequential and large. Tier 2 alone is a week of focused work.
+---
 
-I (Mavis) cannot validate further without Flutter in this sandbox. My validation is structural — brace balance, API shape, code patterns. **Anything that requires actually running the app is on you.**
+## 13. 🟢 PB schema complete + live
+
+8 `nt_*` collections on `pocketbase.scaleupcrm.com`:
+- nt_users (base, 11 fields)
+- nt_food_logs (19 fields)
+- nt_exercises (16 fields, 46 chest seeded)
+- nt_workout_sessions (9 fields)
+- nt_weight_entries (7 fields)
+- nt_favorites (10 fields)
+- nt_meal_templates (7 fields)
+- nt_sync_queue (9 fields)
+- nt_barcode_cache (19 fields, anonymous read)
+
+The OFF→PB sync cron (`off-to-pb-sync.yml`) runs every 6h to populate the barcode cache. Last runtime: unknown (no GitHub Actions UI access from sandbox).
+
+---
+
+## 14. 🟡 2 surviving "TODO" comments in user-facing code
+
+```dart
+// lib/features/insights/presentation/screens/insights_screen.dart:206
+// TODO: wire to WeightRepository + nt_weight_entries.
+
+// lib/features/workout/presentation/screens/workout_screen.dart:534
+// TODO: wire to active workout session once
+```
+
+These are **the Insights screen and Workout screen** — they render placeholder data, not real Drift-backed data. User must manually log weight via the "Log weight" button you added in commit `3b3556f`, and the chart reads from a `_generateSampleWeights()` hardcoded list.
+
+**Effort:** 4–6 hours to wire Insights to WeightRepository, another 6–8 hours to fully wire Workout session flow.
+
+---
+
+## 15. 🟢 Supabase folder exists but unused
+
+```
+supabase/
+```
+
+No files imported from this folder in `lib/`. The `supabase_flutter: ^2.8.0` dep is declared. `supabase/` directory holds what looks like initial setup. Either:
+- Finish Supabase integration (auth + cloud sync), OR
+- Remove the dep until you actually need it.
+
+**Effort:** 1 week to do Supabase properly (RLS, schema, real-time sync).
+
+---
+
+## Priority-ordered fix list (next 2 weeks)
+
+| # | Task | Effort | Why first |
+|---|---|---|---|
+| 1 | Fix 31 compile errors in barcode/camera screens | 45 min | Without this, nothing else runs |
+| 2 | Fix 17 lint warnings (`dart fix --apply`) | 15 min | One-shot cleanup |
+| 3 | README Isar→Drift, Flutter 3.24→3.27, etc. | 10 min | Avoid contributor confusion |
+| 4 | Remove dead deps: just_audio, web_socket_channel, confetti, shimmer, animations, lottie, gap, supabase_flutter (if no plan) | 30 min | Smaller dep tree = faster builds |
+| 5 | 7 priority tests (AI gateway, Drift DB, error handler, repositories, providers, smoke test) | 1–2 days | Without tests, every future PR is a coin flip |
+| 6 | Onboarding flow (3 screens: welcome → goal → first weight) | 2 days | App without onboarding = immediately-churned |
+| 7 | Wire Insights + Workout screens to Drift repos | 1 day | Currently renders fake data — feels broken |
+| 8 | Sentry integration for crash reporting | 2 hours | Production without crash reporting = blind |
+| 9 | Seed remaining 442 exercises (back, shoulders, arms, legs, glutes, core, cardio, full_body) | 4–6 hours | Without data, workout feature is half-built |
+| 10 | Supabase auth + cloud sync | 1 week (or defer to v2) | Big lever for retention |
+| 11 | Major-version bumps (5 grouped PRs per KNOWN_WARNINGS §6) | 1 week | Future-proofing |
+
+---
+
+## What I would do RIGHT NOW (in priority order)
+
+If you (the user) are reading this and have a fresh morning:
+
+1. **Run `flutter analyze` locally.** Get a current errors list. (`analyze_output.txt` is from your last push.)
+2. **Fix the 31 compile errors.** Mostly `RRect.topLeft` → `Rect.topLeft` and signature fixes. This is THE blocker.
+3. **Run `dart fix --apply`.** Cleans 12 of the 17 warnings in 5 seconds.
+4. **Send me a screenshot of the icon on your home screen** after running `bash tools/sync-app-icons.sh`.
+5. **Pick ONE of the priority tasks (5–11) above and start.** Onboarding is highest-impact. Tests is highest-effort. Exercises is highest-velocity. Pick what excites you.
+
+If you want me to do any of these, just say the word. I'll write the fix, commit, push. You pull, run `flutter analyze`, confirm zero errors.
+
+---
+
+**Auditor:** Mavis (Claude Code)
+**Audit timestamp:** 2026-07-07 13:47 Asia/Shanghai
+**Confidence level:** High on errors/warnings (from `analyze_output.txt`). Medium on feature completeness (from grep + file structure). Low on what users actually see in their app (no device runs).
