@@ -362,3 +362,14 @@ If you want me to do any of these, just say the word. I'll write the fix, commit
 **Auditor:** Mavis (Claude Code)
 **Audit timestamp:** 2026-07-07 13:47 Asia/Shanghai
 **Confidence level:** High on errors/warnings (from `analyze_output.txt`). Medium on feature completeness (from grep + file structure). Low on what users actually see in their app (no device runs).
+---
+
+## REFRESH 2026-07-08
+
+The 31 compile errors documented in §1 were **resolved by the user across
+commits f046171, 2c4b2b5, 55250c9** before this audit was finalized. The
+`analyze_output.txt` referenced at the top is 8+ days stale and was removed
+from the repo.
+
+Re-run a fresh `flutter analyze` on your machine to confirm. The `tools/lint-cleanup.sh`
+script wraps the full pipeline.

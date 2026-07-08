@@ -27,7 +27,6 @@ dependencies:
 
   # ── Networking ────────────────────────────────────────────────
   dio: ^5.7.0
-  web_socket_channel: ^3.0.1
 
   # ── AI / ML ───────────────────────────────────────────────────
   # (No direct SDK — calls go through our AI gateway repo)
@@ -37,7 +36,6 @@ dependencies:
   image_picker: ^1.1.2
   image: ^4.2.0
   record: ^7.1.1                  # Voice capture (stream-to-transcription)
-  just_audio: ^0.9.40             # Audio playback for TTS / cues
   permission_handler: ^11.3.1
   mobile_scanner: ^5.2.3          # Barcode/QR scanning (EAN, UPC, etc.)
   cached_network_image: ^3.4.1    # Disk + memory cache for remote images
@@ -51,15 +49,8 @@ dependencies:
   # ── UI ────────────────────────────────────────────────────────
   google_fonts: ^6.2.1
   flutter_animate: ^4.5.0
-  animations: ^2.0.11
   fl_chart: ^0.69.0
-  shimmer: ^3.0.0
-  confetti: ^0.7.0
-  flutter_staggered_animations: ^1.1.1
-  lottie: ^3.1.2
   rive: ^0.13.13
-  flutter_svg: ^2.0.10+1
-  gap: ^3.0.1
 
   # ── Models ────────────────────────────────────────────────────
   freezed_annotation: ^2.4.4
@@ -69,11 +60,8 @@ dependencies:
   uuid: ^4.5.1
   intl: ^0.19.0
   collection: ^1.18.0
-  crypto: ^3.0.5
   rxdart: ^0.28.0                 # Streams for voice
 
-  # ── Supabase (cloud sync ready) ───────────────────────────────
-  supabase_flutter: ^2.8.0
 
 dev_dependencies:
   flutter_test:

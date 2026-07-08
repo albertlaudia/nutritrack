@@ -11,36 +11,35 @@ Snap your meal. Speak your lunch. Get instant macro breakdowns with adaptive tar
 | Type "1 cup rice" in search | Snap photo, AI identifies rice + chicken + greens separately |
 | Log workout sets in 5 separate screens | Voice: "Bench 3x8 at 185, RPE 8" — done |
 | Manual macro targets | TDEE wizard that recalibrates with your goal + activity |
-| Lose your log if you don't log in | Offline-first Isar DB; cloud sync is optional |
+| Lose your log if you don't log in | Offline-first Drift DB; cloud sync is optional |
 
 ## Architecture
 
-Domain-Driven Architecture (DDA) with **clear boundaries** between layers:
+Domain-Driven Design (DDD) with **clear boundaries** between layers:
 
 ```
 lib/
 ├── core/                    # Framework-level concerns
 │   ├── ai/                 # Pluggable AI gateway (vision + voice)
-│   ├── db/                 # Isar collections + service
-│   ├── theme/              # Design system
-│   ├── animation/          # Motion tokens
-│   ├── network/            # Dio config
+│   ├── db/                 # Drift DB + service
+│   ├── sync/               # PocketBase REST client
+│   ├── error/              # Global error handler + error boundary widget
+│   ├── theme/              # Design system (colors, motion, theme)
 │   └── config/             # Secrets (compile-time env)
 │
 ├── features/                # Vertical features, each self-contained
 │   ├── dashboard/
-│   │   ├── domain/         # FoodLogEntry, MacroNutrients (pure)
-│   │   ├── data/           # FoodLogRepository (Isar)
+│   │   ├── domain/         # FoodLogEntry, MacroNutrients (freezed)
+│   │   ├── data/           # FoodLogRepository (Drift)
 │   │   └── presentation/   # DashboardScreen + widgets
 │   ├── workout/
 │   ├── insights/
 │   ├── settings/
-│   └── ...
+│   ├── camera/             # Snap → AI → review → save
+│   └── barcode/            # Scan → OFF lookup → review → save
 │
 ├── shared/                  # Cross-feature concerns
-│   ├── providers/          # Riverpod providers (@riverpod codegen)
-│   ├── widgets/            # Reusable widgets
-│   └── extensions/
+│   └── providers/          # Riverpod providers (@riverpod codegen)
 │
 └── app/                    # App entry: theme, router, shell
     ├── app.dart
@@ -52,17 +51,17 @@ lib/
 
 | Layer | Choice |
 |---|---|
-| Framework | Flutter 3.24+, Dart 3.4+ |
-| State | Riverpod 2.5 with `@riverpod` codegen |
+| Framework | Flutter 3.27+, Dart 3.6+ |
+| State | Riverpod 2.6 with `@riverpod` codegen |
 | Routing | go_router 14 with `StatefulShellRoute.indexedStack` |
-| Local DB | Isar 3.1 (NoSQL, indexed, reactive queries) |
+| Local DB | Drift 2.28 (SQLite, reactive streams) |
 | AI | OpenRouter → MiniMax M3 + Gemini Flash + GPT-4o-mini fallback |
-| Audio | record 5.x → Whisper large-v3 |
+| Voice capture | record 5.1.2 → Whisper large-v3 |
 | Voice parse | M3 text → structured JSON |
-| Health | health 10.x (Apple Health + Health Connect + Google Fit) |
+| Barcode | mobile_scanner 5.2.3 → Open Food Facts |
 | Charts | fl_chart 0.69 (weight graph, moving average) |
-| Cloud sync | supabase_flutter (ready, off by default) |
-| Models | freezed + json_serializable + Isar annotations |
+| Backend | PocketBase (REST, scheduled OFF → PB sync via GitHub Actions) |
+| Models | freezed + json_serializable |
 
 ## 4-tab UX
 
@@ -73,10 +72,10 @@ lib/
 - **Meal timeline** — Breakfast → Lunch → Dinner → Snacks, each with sparkline macro bars
 
 ### Tab 2: Smart Workout Builder
-- **Exercise DB** — Isar-indexed, 1000+ exercises (seeded once)
+- **Exercise DB** — PocketBase-backed, seeded with chest exercises (488 target across 9 muscle groups)
 - **Filters** — muscle group, equipment, difficulty
 - **Session runner** — sets × reps × weight × RPE
-- **Biometric hooks** — read active energy from Apple Health / Google Fit
+- **Biometric hooks** — local WeightRepository entries
 
 ### Tab 3: AI Insights & Forecasting
 - **Weight progression graph** — daily weight + 7-day moving average
@@ -92,8 +91,7 @@ lib/
 ## Quick start
 
 ```bash
-# 1. Install Flutter
-# https://docs.flutter.dev/get-started/install
+# 1. Install Flutter 3.27+ from https://docs.flutter.dev/get-started/install
 
 # 2. Clone
 git clone https://github.com/albertlaudia/nutritrack.git
@@ -102,16 +100,17 @@ cd nutritrack
 # 3. One-shot setup
 bash scripts/setup.sh
 # - flutter pub get
-# - copies secrets template
-# - runs build_runner
+# - copies secrets template to lib/core/config/secrets.dart
+# - runs build_runner (freezed, json_serializable, drift, riverpod)
 
 # 4. Edit secrets with your OpenRouter key
-#    (and Supabase URL/anon if you want cloud sync)
 # lib/core/config/secrets.dart
 
 # 5. Run
 flutter run
 ```
+
+**First build on a fresh clone takes ~3 minutes** (downloads Gradle, runs build_runner, runs pub get). Subsequent builds are ~10 seconds.
 
 ## AI gateway — pluggable
 
@@ -131,14 +130,25 @@ Default implementation: **OpenRouterAIGateway** that:
 
 Swap in your own `AIGateway` (direct OpenAI, on-device TFLite, etc.) by providing an alternate implementation in `core_providers.dart`.
 
-## Production checklist
+## Production readiness
 
-- [ ] Add real release signing keys (Android `release.keystore`, iOS Apple Developer team)
-- [ ] Seed exercise database with 1000+ exercises (`workout_repository.seedExercisesIfEmpty`)
-- [ ] Wire `supabase_flutter` for cloud sync (offline-first still primary)
-- [ ] Add Health platform native config (HealthKit entitlements, Health Connect declaration)
-- [ ] Localize UI strings to ES / ZH / ID for SG/MY/ID launch wedge
-- [ ] App icon + splash assets (currently placeholder emoji)
+See `docs/PRODUCTION_READINESS_AUDIT.md` for the full audit (16-point problem list with effort estimates) and `docs/WHAT_MISSING_AND_HOW_TO_BE_BEST.md` for the product strategy.
+
+Top open items:
+- **Build must complete on a real device** (currently ~30 lint warnings remaining, all minor)
+- **First-run onboarding** — currently goes straight to `/dashboard`
+- **Insights screen real data** — currently renders sample data
+- **Tests** — 0% coverage; plan for ~7 priority tests
+- **Crash reporting** — no Sentry integration yet
+
+## Brand
+
+The NutriTrack mark is a brand-orange rounded square containing a cream "plate" circle with one quadrant cleanly cut out (top-right), three horizontal data lines on the cream area (representing parsed meal data), and one solid orange dot below center (representing "logged").
+
+- Master SVG: `media/app-icons/source/icon-master.svg`
+- Per-platform exports: `media/app-icons/{ios,android,web,store-assets}/`
+- Regenerate after any change: `python3 scripts/export_app_icons.py && bash tools/sync-app-icons.sh`
+- Design tokens: `media/templates/figma-tokens.json`
 
 ## License
 
