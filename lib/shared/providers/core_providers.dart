@@ -9,6 +9,7 @@ import '../../features/camera/data/off_client.dart';
 import '../../features/dashboard/data/food_log_repository.dart';
 import '../../features/dashboard/domain/food_log_entry.dart' as domain;
 import '../../features/dashboard/domain/macro_nutrients.dart';
+import '../../features/settings/data/user_profile_repository.dart';
 import '../../features/settings/domain/user_profile.dart';
 export '../../features/settings/domain/user_profile.dart';
 import '../../features/workout/data/workout_repository.dart';
@@ -91,21 +92,24 @@ class SelectedDate extends _$SelectedDate {
 
 /// User profile controller — single record.
 @Riverpod(keepAlive: true)
+/// UserProfileController — single record in the local UserProfiles table.
+/// Persists across app launches via Drift. Hydrates on first read.
 class UserProfileController extends _$UserProfileController {
   @override
-  UserProfile build() {
-    return UserProfile(
-      id: 'me',
-      sex: Sex.other,
-      ageYears: 30,
-      heightCm: 170,
-      weightKg: 70,
-      activity: ActivityLevel.moderate,
-      goal: Goal.maintenance,
-    );
+  Future<UserProfile> build() async {
+    final db = await ref.watch(dbInitProvider.future);
+    final repo = UserProfileRepository(db);
+    return repo.get();
   }
 
-  void update(UserProfile profile) => state = profile;
+  /// Persist changes from the Settings wizard. Re-reads from Drift so the
+  /// cached value stays in sync across screens and app launches.
+  Future<void> update(UserProfile profile) async {
+    final db = await ref.read(dbInitProvider.future);
+    final repo = UserProfileRepository(db);
+    await repo.save(profile);
+    state = AsyncData(profile);
+  }
 }
 
 /// AsyncNotifier holding today's meals as a reactive stream from Drift.

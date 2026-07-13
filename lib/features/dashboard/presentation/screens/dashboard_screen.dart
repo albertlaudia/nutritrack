@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/providers/core_providers.dart';
 import '../../domain/food_log_entry.dart';
 import '../../domain/macro_nutrients.dart';
+import '../../../settings/domain/user_profile.dart';
 import '../widgets/macro_donut.dart';
 import '../widgets/meal_card.dart';
 import '../widgets/quick_log_bar.dart';
@@ -18,7 +19,9 @@ class DashboardScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final asyncMeals = ref.watch(todayMealsProvider);
     final asyncMacros = ref.watch(todayMacrosProvider);
-    final profile = ref.watch(userProfileControllerProvider);
+    // Profile is async (loads from Drift). While loading, fall back to a sane
+    // default so target rings still render with placeholder values.
+    final profile = ref.watch(userProfileControllerProvider).valueOrNull ?? _defaultProfile();
 
     Future<void> deleteEntry(String id) async {
       HapticFeedback.mediumImpact();
@@ -589,3 +592,14 @@ class _ErrorState extends StatelessWidget {
     );
   }
 }
+
+UserProfile _defaultProfile() => UserProfile(
+      id: 'me',
+      sex: Sex.other,
+      ageYears: 30,
+      heightCm: 170,
+      weightKg: 70,
+      activity: ActivityLevel.moderate,
+      goal: Goal.maintenance,
+      useMetric: true,
+    );

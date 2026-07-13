@@ -16,7 +16,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final profile = ref.watch(userProfileControllerProvider);
+    // Profile loads from Drift. While loading, fall back to a default.
+    final profile = ref.watch(userProfileControllerProvider).valueOrNull ?? _defaultProfile();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -180,7 +181,8 @@ class _WizardStepperState extends ConsumerState<_WizardStepper> {
       activity: _activity,
       goal: _goal,
     );
-    ref.read(userProfileControllerProvider.notifier).update(updated);
+    await ref.read(userProfileControllerProvider.notifier).update(updated);
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Profile updated — targets recalculated')),
     );
@@ -556,3 +558,13 @@ class _MacroTargetPreview extends StatelessWidget {
     );
   }
 }
+UserProfile _defaultProfile() => UserProfile(
+      id: 'me',
+      sex: Sex.other,
+      ageYears: 30,
+      heightCm: 170,
+      weightKg: 70,
+      activity: ActivityLevel.moderate,
+      goal: Goal.maintenance,
+      useMetric: true,
+    );
