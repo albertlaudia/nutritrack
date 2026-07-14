@@ -98,15 +98,15 @@ class UserProfileController extends _$UserProfileController {
   @override
   Future<UserProfile> build() async {
     final db = await ref.watch(dbInitProvider.future);
-    final repo = UserProfileRepository(db);
+    final repo = UserProfileRepository(db.db);
     return repo.get();
   }
 
   /// Persist changes from the Settings wizard. Re-reads from Drift so the
   /// cached value stays in sync across screens and app launches.
-  Future<void> update(UserProfile profile) async {
+  Future<void> updateProfile(UserProfile profile) async {
     final db = await ref.read(dbInitProvider.future);
-    final repo = UserProfileRepository(db);
+    final repo = UserProfileRepository(db.db);
     await repo.save(profile);
     state = AsyncData(profile);
   }

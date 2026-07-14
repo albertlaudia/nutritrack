@@ -6,7 +6,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/providers/core_providers.dart';
 import '../../domain/food_log_entry.dart';
 import '../../domain/macro_nutrients.dart';
-import '../../../settings/domain/user_profile.dart';
 import '../widgets/macro_donut.dart';
 import '../widgets/meal_card.dart';
 import '../widgets/quick_log_bar.dart';

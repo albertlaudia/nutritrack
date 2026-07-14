@@ -172,7 +172,7 @@ class _WizardStepperState extends ConsumerState<_WizardStepper> {
     _goal = widget.profile.goal;
   }
 
-  void _apply() {
+  Future<void> _apply() async {
     final updated = widget.profile.copyWith(
       sex: _sex,
       ageYears: _age,
@@ -181,7 +181,7 @@ class _WizardStepperState extends ConsumerState<_WizardStepper> {
       activity: _activity,
       goal: _goal,
     );
-    await ref.read(userProfileControllerProvider.notifier).update(updated);
+    await ref.read(userProfileControllerProvider.notifier).updateProfile(updated);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Profile updated — targets recalculated')),

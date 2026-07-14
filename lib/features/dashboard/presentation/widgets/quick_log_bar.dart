@@ -252,14 +252,20 @@ class _QuickLogBarState extends ConsumerState<QuickLogBar>
                                     Icon(
                                       _isRecording ? Icons.mic : Icons.mic_none_rounded,
                                       color: Colors.white,
+                                      size: 20,
                                     ),
                                     const SizedBox(width: 8),
-                                    Text(
-                                      _isRecording ? 'Listening…' : 'Hold to talk',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15,
+                                    Expanded(
+                                      child: Text(
+                                        _isRecording ? 'Listening…' : 'Hold to talk',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
                                       ),
                                     ),
                                   ],
